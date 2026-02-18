@@ -13,9 +13,14 @@ function UploadResource() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
-  const [unit, setUnit] = useState("");
-  const [units, setUnits] = useState([]);
   const [academicYear, setAcademicYear] = useState("");
+  const [semester, setSemester] = useState("");
+  const [course, setCourse] = useState("");
+  const [subject, setSubject] = useState("");
+  const [contributorType, setContributorType] = useState("");
+
+  const [courses, setCourses] = useState([]);
+  const [subjects, setSubjects] = useState([]);
 
   const [resourceType, setResourceType] = useState("");
   const [visibility, setVisibility] = useState("");
@@ -25,29 +30,61 @@ function UploadResource() {
   const [externalLink, setExternalLink] = useState("");
 
   useEffect(() => {
-    fetchUnits();
+    fetchCourses();
   }, []);
 
-  const fetchUnits = async () => {
+  useEffect(() => {
+    if (course) {
+      fetchSubjects(course);
+    } else {
+      setSubjects([]);
+      setSubject("");
+    }
+  }, [course]);
+
+  const fetchCourses = async () => {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
 
-      const response = await fetch(`${API_BASE_URL}/syllabus-units`, {
+      const response = await fetch(`${API_BASE_URL}/courses`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
-        throw new Error("Failed to load units");
+        throw new Error("Failed to load courses");
       }
 
       const data = await response.json();
-      setUnits(data);
+      setCourses(data);
     } catch (err) {
-      console.error("Error fetching units:", err);
-      setError("Failed to load syllabus units");
+      console.error("Error fetching courses:", err);
+      setError("Failed to load courses");
+    }
+  };
+
+  const fetchSubjects = async (courseId) => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      const response = await fetch(`${API_BASE_URL}/subjects?course_id=${courseId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to load subjects");
+      }
+
+      const data = await response.json();
+      setSubjects(data);
+    } catch (err) {
+      console.error("Error fetching subjects:", err);
+      setError("Failed to load subjects");
     }
   };
 
@@ -61,8 +98,18 @@ function UploadResource() {
       return;
     }
 
-    if (!unit) {
-      setError("Please select a syllabus unit");
+    if (!course) {
+      setError("Please select a course");
+      return;
+    }
+
+    if (!subject) {
+      setError("Please select a subject");
+      return;
+    }
+
+    if (!semester) {
+      setError("Please select a semester");
       return;
     }
 
@@ -73,6 +120,11 @@ function UploadResource() {
 
     if (!resourceType) {
       setError("Please select a resource type");
+      return;
+    }
+
+    if (!contributorType) {
+      setError("Please select a contributor type");
       return;
     }
 
@@ -108,10 +160,11 @@ function UploadResource() {
           description: description.trim(),
           resource_type: resourceType,
           academic_year: Number(academicYear),
-          course_id: 1,
-          subject_id: 1,
-          unit_id: Number(unit),
+          semester: Number(semester),
+          course_id: Number(course),
+          subject_id: Number(subject),
           contributor_id: 1,
+          contributor_type: contributorType,
           visibility_scope: visibility,
           external_url: externalLink.trim(),
         };
@@ -137,10 +190,11 @@ function UploadResource() {
         formData.append("description", description.trim());
         formData.append("resource_type", resourceType);
         formData.append("academic_year", academicYear);
-        formData.append("course_id", 1);
-        formData.append("subject_id", 1);
-        formData.append("unit_id", unit);
+        formData.append("semester", semester);
+        formData.append("course_id", course);
+        formData.append("subject_id", subject);
         formData.append("contributor_id", 1);
+        formData.append("contributor_type", contributorType);
         formData.append("visibility_scope", visibility);
 
         const res = await fetch(`${API_BASE_URL}/resources/file`, {
@@ -262,24 +316,92 @@ function UploadResource() {
               </div>
             </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="unit">
-                Syllabus Unit *
-              </label>
-              <select
-                id="unit"
-                className="form-select"
-                value={unit}
-                onChange={(e) => setUnit(e.target.value)}
-                disabled={submitting}
-              >
-                <option value="">Select unit</option>
-                {units.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    Unit {u.unit_number}
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label" htmlFor="semester">
+                  Semester *
+                </label>
+                <select
+                  id="semester"
+                  className="form-select"
+                  value={semester}
+                  onChange={(e) => setSemester(e.target.value)}
+                  disabled={submitting}
+                >
+                  <option value="">Select semester</option>
+                  <option value="1">Semester 1</option>
+                  <option value="2">Semester 2</option>
+                  <option value="3">Semester 3</option>
+                  <option value="4">Semester 4</option>
+                  <option value="5">Semester 5</option>
+                  <option value="6">Semester 6</option>
+                  <option value="7">Semester 7</option>
+                  <option value="8">Semester 8</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="course">
+                  Course *
+                </label>
+                <select
+                  id="course"
+                  className="form-select"
+                  value={course}
+                  onChange={(e) => setCourse(e.target.value)}
+                  disabled={submitting}
+                >
+                  <option value="">Select course</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label" htmlFor="subject">
+                  Subject *
+                </label>
+                <select
+                  id="subject"
+                  className="form-select"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  disabled={submitting || !course}
+                >
+                  <option value="">
+                    {course ? "Select subject" : "Select a course first"}
                   </option>
-                ))}
-              </select>
+                  {subjects.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="contributor-type">
+                  Contributor Type *
+                </label>
+                <select
+                  id="contributor-type"
+                  className="form-select"
+                  value={contributorType}
+                  onChange={(e) => setContributorType(e.target.value)}
+                  disabled={submitting}
+                >
+                  <option value="">Select contributor type</option>
+                  <option value="student">Student</option>
+                  <option value="faculty">Faculty</option>
+                  <option value="alumni">Alumni</option>
+                  <option value="external">External</option>
+                </select>
+              </div>
             </div>
           </section>
 

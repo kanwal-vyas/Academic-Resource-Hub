@@ -150,7 +150,8 @@ app.get('/resources', authMiddleware, async (req, res) => {
         ay.start_year,
         ay.end_year,
         u.unit_number,
-        usr.full_name AS contributor_name
+        usr.full_name AS contributor_name,
+        usr.is_verified AS contributor_is_verified
       FROM resources r
       JOIN subjects s ON r.subject_id = s.id
       LEFT JOIN subject_offerings so ON r.subject_offering_id = so.id
@@ -191,7 +192,8 @@ app.get('/resources/latest', authMiddleware, async (req, res) => {
         ay.start_year,
         ay.end_year,
         u.unit_number,
-        usr.full_name AS contributor_name
+        usr.full_name AS contributor_name,
+        usr.is_verified AS contributor_is_verified
       FROM resources r
       JOIN subjects s ON r.subject_id = s.id
       LEFT JOIN subject_offerings so ON r.subject_offering_id = so.id
