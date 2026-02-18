@@ -4,14 +4,14 @@ function CourseList({ courses, selectedCourse, onSelectCourse }) {
       <h2>Courses</h2>
       <ul>
         {courses.map((course) => (
-          <li key={course.course_id}>
+          <li key={course.id}>
             <button
               className={
-                selectedCourse === course.course_id ? "selected" : ""
+                selectedCourse === course.id ? "selected" : ""
               }
-              onClick={() => onSelectCourse(course.course_id)}
+              onClick={() => onSelectCourse(course.id)}
             >
-              {course.display_name}
+              {course.name}
             </button>
           </li>
         ))}

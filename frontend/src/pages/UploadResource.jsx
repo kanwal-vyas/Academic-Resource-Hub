@@ -112,9 +112,8 @@ function UploadResource() {
           subject_id: 1,
           unit_id: Number(unit),
           contributor_id: 1,
-          contributor_role: "student",
           visibility_scope: visibility,
-          external_link: externalLink.trim(),
+          external_url: externalLink.trim(),
         };
 
         const res = await fetch(`${API_BASE_URL}/resources`, {
@@ -142,7 +141,6 @@ function UploadResource() {
         formData.append("subject_id", 1);
         formData.append("unit_id", unit);
         formData.append("contributor_id", 1);
-        formData.append("contributor_role", "student");
         formData.append("visibility_scope", visibility);
 
         const res = await fetch(`${API_BASE_URL}/resources/file`, {
@@ -278,7 +276,7 @@ function UploadResource() {
                 <option value="">Select unit</option>
                 {units.map((u) => (
                   <option key={u.id} value={u.id}>
-                    Unit {u.unit_number}: {u.unit_title}
+                    Unit {u.unit_number}
                   </option>
                 ))}
               </select>

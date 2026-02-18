@@ -76,12 +76,12 @@ function ResourceList({ resources }) {
     setError(null);
 
     try {
-      if (resource.content_type === "file") {
+      if (resource.resource_type === "file") {
         await handleFileResource(resource.id);
-      } else if (resource.content_type === "link") {
-        handleLinkResource(resource.external_link);
+      } else if (resource.resource_type === "external_link") {
+        handleLinkResource(resource.external_url);
       } else {
-        throw new Error("Unknown content type");
+        throw new Error("Unknown resource type");
       }
     } catch (err) {
       console.error("Error viewing resource:", err);
@@ -95,11 +95,11 @@ function ResourceList({ resources }) {
     window.open(signedUrl, "_blank", "noopener,noreferrer");
   };
 
-  const handleLinkResource = (externalLink) => {
-    const url = formatUrl(externalLink);
+  const handleLinkResource = (externalUrl) => {
+    const url = formatUrl(externalUrl);
     
     if (!url) {
-      throw new Error("Invalid external link");
+      throw new Error("Invalid external URL");
     }
     
     window.open(url, "_blank", "noopener,noreferrer");

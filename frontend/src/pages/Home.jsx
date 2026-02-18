@@ -105,8 +105,8 @@ function Home() {
     setSelectedResourceId(resource.id);
 
     try {
-      if (resource.content_type === "link") {
-        const url = formatUrl(resource.external_link);
+      if (resource.resource_type === "external_link") {
+        const url = formatUrl(resource.external_url);
         window.open(url, "_blank", "noopener,noreferrer");
       } else {
         const { data: sessionData } = await supabase.auth.getSession();
@@ -202,7 +202,7 @@ function ResourceCard({ resource, isSelected, onView }) {
 
       <footer className="resource-meta">
         <span className="meta-item">📘 {resource.subject_name}</span>
-        <span className="meta-item">👤 {resource.contributor_role}</span>
+        <span className="meta-item">👤 {resource.contributor_name}</span>
       </footer>
 
       <button
