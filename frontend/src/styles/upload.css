@@ -1,0 +1,354 @@
+/* ===============================
+   Upload Page
+   =============================== */
+.upload-page {
+  background-color: var(--bg);
+  min-height: calc(100vh - 72px);
+  display: flex;
+  justify-content: center;
+  padding: var(--space-2xl) var(--space-lg);
+}
+
+/* ===============================
+   Upload Card
+   =============================== */
+.upload-card {
+  background-color: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-2xl);
+  width: 100%;
+  max-width: 800px;
+  border: 1px solid var(--border);
+}
+
+/* ===============================
+   Page Header
+   =============================== */
+.page-header-upload {
+  margin-bottom: var(--space-xl);
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 var(--space-xs);
+  letter-spacing: -0.02em;
+}
+
+.page-subtitle {
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ===============================
+   Form Layout
+   =============================== */
+.upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin: 0;
+}
+
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  margin: var(--space-md) 0;
+}
+
+/* ===============================
+   Form Groups
+   =============================== */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+}
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* ===============================
+   Form Inputs
+   =============================== */
+.form-input,
+.form-select,
+.form-textarea {
+  background-color: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  font-size: 0.9375rem;
+  color: var(--primary);
+  font-family: inherit;
+  transition: all var(--transition-fast);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent-light);
+  outline-offset: 0;
+}
+
+.form-input:disabled,
+.form-select:disabled,
+.form-textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(--surface-secondary);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.6;
+}
+
+/* ===============================
+   Select Dropdown
+   =============================== */
+.form-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%235a5a5a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 40px;
+}
+
+/* ===============================
+   File Upload
+   =============================== */
+.form-file {
+  background-color: var(--surface-secondary);
+  border: 2px dashed var(--border-dark);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  font-size: 0.9375rem;
+  color: var(--primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.form-file:hover:not(:disabled) {
+  border-color: var(--accent);
+  background-color: var(--surface);
+}
+
+.form-file:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.file-hint {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin: var(--space-xs) 0 0;
+  font-style: italic;
+}
+
+/* ===============================
+   Radio Group
+   =============================== */
+.radio-group {
+  display: flex;
+  gap: var(--space-xl);
+  flex-wrap: wrap;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+  color: var(--primary);
+  font-size: 0.9375rem;
+}
+
+.radio-label:has(.radio-input:disabled) {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.radio-input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.radio-input:disabled {
+  cursor: not-allowed;
+}
+
+/* ===============================
+   Form Actions
+   =============================== */
+.form-actions {
+  display: flex;
+  gap: var(--space-md);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border);
+}
+
+.button-primary,
+.button-secondary {
+  padding: 14px 28px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
+.button-primary {
+  background-color: var(--accent);
+  color: var(--surface);
+  border: none;
+  flex: 1;
+  box-shadow: var(--shadow-sm);
+}
+
+.button-primary:hover:not(:disabled) {
+  background-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.button-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.button-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.button-secondary {
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border-dark);
+}
+
+.button-secondary:hover:not(:disabled) {
+  background-color: var(--surface-secondary);
+  color: var(--primary);
+  border-color: var(--text-secondary);
+}
+
+.button-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===============================
+   Error Banner
+   =============================== */
+.error-banner {
+  padding: var(--space-md);
+  background-color: #fff5f5;
+  border: 1.5px solid #feb2b2;
+  border-radius: var(--radius-md);
+  color: #c53030;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.dark .error-banner {
+  background-color: rgba(254, 178, 178, 0.1);
+  border-color: rgba(254, 178, 178, 0.3);
+  color: #feb2b2;
+}
+
+/* ===============================
+   Spinner
+   =============================== */
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: var(--surface);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===============================
+   Responsive
+   =============================== */
+@media (max-width: 768px) {
+  .upload-page {
+    padding: var(--space-xl) var(--space-md);
+  }
+
+  .upload-card {
+    padding: var(--space-xl);
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .button-primary,
+  .button-secondary {
+    width: 100%;
+  }
+
+  .radio-group {
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+}
