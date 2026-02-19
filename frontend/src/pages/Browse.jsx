@@ -379,21 +379,23 @@ function ResourceCard({ resource, isSelected, onView }) {
       </p>
 
       <footer className="resource-meta">
-        <span className="meta-item">📘 {resource.subject_name}</span>
-        {resource.unit_number && (
-          <span className="meta-item">📑 Unit {resource.unit_number}</span>
-        )}
-        <span className="meta-item">
-          👤 {contributorTypeFormatted}
+        <div className="meta-left">
+          <span className="meta-item">📘 {resource.subject_name}</span>
           {resource.faculty_name && (
-            <span className="meta-sub"> · {resource.faculty_name}</span>
+            <span className="meta-item">🎓 Taught by {resource.faculty_name}</span>
           )}
+          {resource.unit_number && (
+            <span className="meta-item">📑 Unit {resource.unit_number}</span>
+          )}
+        </div>
+        <div className="meta-right">
+          <span className="meta-item">{contributorTypeFormatted}</span>
           {resource.contributor_is_verified ? (
             <span className="verified-badge" title="Verified Contributor">✔ Verified</span>
           ) : (
             <span className="unverified-badge" title="Unverified Contributor">Unverified</span>
           )}
-        </span>
+        </div>
       </footer>
 
       <button

@@ -17,7 +17,6 @@ function UploadResource() {
   const [semester, setSemester] = useState("");
   const [course, setCourse] = useState("");
   const [subject, setSubject] = useState("");
-  const [contributorType, setContributorType] = useState("");
 
   const [courses, setCourses] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -123,11 +122,6 @@ function UploadResource() {
       return;
     }
 
-    if (!contributorType) {
-      setError("Please select a contributor type");
-      return;
-    }
-
     if (!visibility) {
       setError("Please select visibility scope");
       return;
@@ -164,7 +158,6 @@ function UploadResource() {
           course_id: Number(course),
           subject_id: Number(subject),
           contributor_id: 1,
-          contributor_type: contributorType,
           visibility_scope: visibility,
           external_url: externalLink.trim(),
         };
@@ -194,7 +187,6 @@ function UploadResource() {
         formData.append("course_id", course);
         formData.append("subject_id", subject);
         formData.append("contributor_id", 1);
-        formData.append("contributor_type", contributorType);
         formData.append("visibility_scope", visibility);
 
         const res = await fetch(`${API_BASE_URL}/resources/file`, {
@@ -381,25 +373,6 @@ function UploadResource() {
                       {s.name}
                     </option>
                   ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="contributor-type">
-                  Contributor Type *
-                </label>
-                <select
-                  id="contributor-type"
-                  className="form-select"
-                  value={contributorType}
-                  onChange={(e) => setContributorType(e.target.value)}
-                  disabled={submitting}
-                >
-                  <option value="">Select contributor type</option>
-                  <option value="student">Student</option>
-                  <option value="faculty">Faculty</option>
-                  <option value="alumni">Alumni</option>
-                  <option value="external">External</option>
                 </select>
               </div>
             </div>
