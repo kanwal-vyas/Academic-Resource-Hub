@@ -150,14 +150,16 @@ app.get('/resources', authMiddleware, async (req, res) => {
         ay.start_year,
         ay.end_year,
         u.unit_number,
-        usr.full_name AS contributor_name,
-        usr.is_verified AS contributor_is_verified
+        usr.role AS contributor_type,
+        usr.is_verified AS contributor_is_verified,
+        faculty.full_name AS faculty_name
       FROM resources r
       JOIN subjects s ON r.subject_id = s.id
       LEFT JOIN subject_offerings so ON r.subject_offering_id = so.id
       LEFT JOIN academic_years ay ON so.academic_year_id = ay.id
       LEFT JOIN units u ON r.unit_id = u.id
       JOIN users usr ON r.contributor_id = usr.id
+      LEFT JOIN users faculty ON so.faculty_id = faculty.id
       WHERE r.is_deleted = false
       ORDER BY r.created_at DESC
     `;
@@ -192,14 +194,16 @@ app.get('/resources/latest', authMiddleware, async (req, res) => {
         ay.start_year,
         ay.end_year,
         u.unit_number,
-        usr.full_name AS contributor_name,
-        usr.is_verified AS contributor_is_verified
+        usr.role AS contributor_type,
+        usr.is_verified AS contributor_is_verified,
+        faculty.full_name AS faculty_name
       FROM resources r
       JOIN subjects s ON r.subject_id = s.id
       LEFT JOIN subject_offerings so ON r.subject_offering_id = so.id
       LEFT JOIN academic_years ay ON so.academic_year_id = ay.id
       LEFT JOIN units u ON r.unit_id = u.id
       JOIN users usr ON r.contributor_id = usr.id
+      LEFT JOIN users faculty ON so.faculty_id = faculty.id
       WHERE r.is_deleted = false
       ORDER BY r.created_at DESC
       LIMIT 3

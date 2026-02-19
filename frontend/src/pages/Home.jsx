@@ -39,6 +39,13 @@ const formatResourceType = (type) => {
   );
 };
 
+const formatContributorType = (type) => {
+  return (
+    type?.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) ||
+    "Unknown"
+  );
+};
+
 // ===============================
 // Custom Hook
 // ===============================
@@ -185,6 +192,7 @@ function Home() {
 // ===============================
 function ResourceCard({ resource, isSelected, onView }) {
   const resourceTypeFormatted = formatResourceType(resource.resource_type);
+  const contributorTypeFormatted = formatContributorType(resource.contributor_type);
 
   return (
     <article className="card resource-card">
@@ -202,7 +210,17 @@ function ResourceCard({ resource, isSelected, onView }) {
 
       <footer className="resource-meta">
         <span className="meta-item">📘 {resource.subject_name}</span>
-        <span className="meta-item">👤 {resource.contributor_name}</span>
+        <span className="meta-item">
+          👤 {contributorTypeFormatted}
+          {resource.faculty_name && (
+            <span className="meta-sub"> · {resource.faculty_name}</span>
+          )}
+          {resource.contributor_is_verified ? (
+            <span className="verified-badge" title="Verified Contributor">✔ Verified</span>
+          ) : (
+            <span className="unverified-badge" title="Unverified Contributor">Unverified</span>
+          )}
+        </span>
       </footer>
 
       <button
