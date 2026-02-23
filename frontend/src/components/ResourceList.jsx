@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "../supabaseClient";
 
 // ===============================
 // Constants
@@ -37,7 +38,7 @@ const formatUrl = (url) => {
 const getResourceTypeDisplay = (type) => {
   const config = RESOURCE_TYPE_CONFIG[type];
   if (config) return config;
-  
+
   // Fallback for unknown types
   return {
     className: "chip-notes",
@@ -49,18 +50,25 @@ const getResourceTypeDisplay = (type) => {
 // API Functions
 // ===============================
 const fetchSignedUrl = async (resourceId) => {
-  const response = await fetch(`${API_BASE_URL}/resources/signed-url/${resourceId}`);
-  
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData?.session?.access_token;
+
+  const response = await fetch(`${API_BASE_URL}/resources/signed-url/${resourceId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
   if (!response.ok) {
     throw new Error(`Failed to fetch signed URL: ${response.status}`);
   }
-  
+
   const data = await response.json();
-  
+
   if (!data?.signedUrl) {
     throw new Error("Signed URL not found in response");
   }
-  
+
   return data.signedUrl;
 };
 
@@ -76,9 +84,9 @@ function ResourceList({ resources }) {
     setError(null);
 
     try {
-      if (resource.resource_type === "file") {
+      if (resource.content_type === "file") {
         await handleFileResource(resource.id);
-      } else if (resource.resource_type === "external_link") {
+      } else if (resource.content_type === "external_link") {
         handleLinkResource(resource.external_url);
       } else {
         throw new Error("Unknown resource type");
@@ -97,11 +105,11 @@ function ResourceList({ resources }) {
 
   const handleLinkResource = (externalUrl) => {
     const url = formatUrl(externalUrl);
-    
+
     if (!url) {
       throw new Error("Invalid external URL");
     }
-    
+
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -113,7 +121,7 @@ function ResourceList({ resources }) {
   return (
     <div className="resource-grid">
       {error && <ErrorMessage message={error} onDismiss={() => setError(null)} />}
-      
+
       {resources.map((resource) => (
         <ResourceCard
           key={resource.id}

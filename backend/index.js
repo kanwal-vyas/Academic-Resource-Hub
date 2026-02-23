@@ -143,6 +143,7 @@ app.get('/resources', authMiddleware, async (req, res) => {
         r.title,
         r.description,
         r.resource_type,
+        r.content_type,
         r.external_url,
         r.created_at,
         s.code AS subject_code,
@@ -187,6 +188,7 @@ app.get('/resources/latest', authMiddleware, async (req, res) => {
         r.title,
         r.description,
         r.resource_type,
+        r.content_type,
         r.external_url,
         r.created_at,
         s.code AS subject_code,
@@ -226,6 +228,153 @@ app.get('/resources/latest', authMiddleware, async (req, res) => {
 });
 
 /**
+ * GET /courses
+ * Fetch all courses
+ */
+
+app.get('/courses', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, code, name, degree_type, department
+      FROM courses
+      ORDER BY created_at DESC
+    `);
+
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('Error fetching courses:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch courses'
+    });
+  }
+});
+
+/**
+ * GET /subjects
+ * Fetch all subjects for a given course_id
+ */
+
+app.get('/subjects', authMiddleware, async (req, res) => {
+  try {
+    const { course_id } = req.query;
+
+    if (!course_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'course_id is required'
+      });
+    }
+
+    const result = await pool.query(`
+      SELECT id, code, name, course_id
+      FROM subjects
+      WHERE course_id = $1
+      ORDER BY created_at DESC
+    `, [course_id]);
+
+    res.json({
+      success: true,
+      data: result.rows
+    });
+
+  } catch (error) {
+    console.error('Error fetching subjects:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch subjects'
+    });
+  }
+});
+
+/**
+ * GET /academic-years
+ * Fetch all academic years
+ */
+
+app.get('/academic-years', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, start_year, end_year
+      FROM academic_years
+      ORDER BY start_year DESC
+    `);
+
+    res.json({
+      success: true,
+      data: result.rows
+    });
+
+  } catch (error) {
+    console.error('Error fetching academic years:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch academic years'
+    });
+  }
+});
+
+/**
+ * GET /units
+ * Fetch all units for a given subject_id and academic_year_id
+ */
+
+app.get('/units', authMiddleware, async (req, res) => {
+  try {
+    const { subject_id, academic_year_id } = req.query;
+
+    console.log("UNITS REQUEST:", subject_id, academic_year_id);
+
+    if (!subject_id || !academic_year_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'subject_id and academic_year_id are required'
+      });
+    }
+
+    // Step 1: find subject offering
+    const offeringResult = await pool.query(
+      `SELECT id FROM subject_offerings 
+       WHERE subject_id = $1 AND academic_year_id = $2`,
+      [subject_id, academic_year_id]
+    );
+
+    if (offeringResult.rows.length === 0) {
+      return res.json({
+        success: true,
+        data: []
+      });
+    }
+
+    const subjectOfferingId = offeringResult.rows[0].id;
+
+    // Step 2: get units
+    const unitsResult = await pool.query(
+      `SELECT id, unit_number 
+       FROM units 
+       WHERE subject_offering_id = $1
+       ORDER BY unit_number ASC`,
+      [subjectOfferingId]
+    );
+
+    res.json({
+      success: true,
+      data: unitsResult.rows
+    });
+
+  } catch (error) {
+    console.error('Error fetching units:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch units'
+    });
+  }
+});
+
+/**
  * POST /resources
  * Create a new external link resource
  */
@@ -241,14 +390,15 @@ app.post('/resources', authMiddleware, async (req, res) => {
       start_year,
       end_year,
       unit_number,
-      external_url
+      external_url,
+      resource_type,
     } = req.body;
     
     // Validation
-    if (!title || !description || !subject_code || !start_year || !end_year || !external_url) {
+    if (!title || !description || !subject_code || !start_year || !end_year || !external_url || !resource_type) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: title, description, subject_code, start_year, end_year, external_url'
+        error: 'Missing required fields: title, description, subject_code, start_year, end_year, external_url, resource_type'
       });
     }
     
@@ -279,10 +429,11 @@ app.post('/resources', authMiddleware, async (req, res) => {
         title,
         description,
         resource_type,
+        content_type,
         external_url,
         contributor_id,
         is_deleted
-      ) VALUES (gen_random_uuid(),$1, $2, $3, $4, $5, $6, $7, $8, $9)
+      ) VALUES (gen_random_uuid(),$1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *
     `;
     
@@ -292,6 +443,7 @@ app.post('/resources', authMiddleware, async (req, res) => {
       unitId,
       title,
       description,
+      resource_type,
       'external_link',
       external_url,
       req.user.id,
@@ -360,7 +512,8 @@ app.post('/resources/file', authMiddleware, (req, res) => {
         subject_code,
         start_year,
         end_year,
-        unit_number
+        unit_number,
+        resource_type,
       } = fields;
       
       // Validation
@@ -420,10 +573,11 @@ app.post('/resources/file', authMiddleware, (req, res) => {
           title,
           description,
           resource_type,
+          content_type,
           storage_path,
           contributor_id,
           is_deleted
-        ) VALUES (gen_random_uuid(),$1, $2, $3, $4, $5, $6, $7, $8, $9)
+        ) VALUES (gen_random_uuid(),$1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *
       `;
       
@@ -433,6 +587,7 @@ app.post('/resources/file', authMiddleware, (req, res) => {
         unitId,
         title,
         description,
+        resource_type,
         'file',
         storagePath,
         req.user.id,
@@ -478,7 +633,7 @@ app.get('/resources/signed-url/:id', authMiddleware, async (req, res) => {
     
     // Fetch resource
     const result = await pool.query(
-      'SELECT id, resource_type, storage_path, is_deleted FROM resources WHERE id = $1',
+      'SELECT id, content_type, storage_path, is_deleted FROM resources WHERE id = $1',
       [id]
     );
     
@@ -492,7 +647,7 @@ app.get('/resources/signed-url/:id', authMiddleware, async (req, res) => {
     const resource = result.rows[0];
     
     // Validate resource type
-    if (resource.resource_type !== 'file') {
+    if (resource.content_type !== 'file') {
       return res.status(400).json({
         success: false,
         error: 'Resource is not a file'

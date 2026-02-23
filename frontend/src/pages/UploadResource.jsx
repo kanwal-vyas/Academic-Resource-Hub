@@ -5,237 +5,289 @@ import "../styles/upload.css";
 
 const API_BASE_URL = "http://localhost:5000";
 
+// ─── API Layer ────────────────────────────────────────────────────────────────
+
+async function getAuthToken() {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData?.session?.access_token;
+  if (!token) throw new Error("Authentication required");
+  return token;
+}
+
+async function apiFetch(path, token) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error(`Failed to fetch ${path}`);
+  const json = await response.json();
+  return json.data ?? json;
+}
+
+async function fetchCourses(token) {
+  return apiFetch("/courses", token);
+}
+
+async function fetchSubjects(courseId, token) {
+  return apiFetch(`/subjects?course_id=${courseId}`, token);
+}
+
+async function fetchAcademicYears(token) {
+  return apiFetch("/academic-years", token);
+}
+
+async function fetchUnits(subjectId, academicYearId, token) {
+  return apiFetch(`/units?subject_id=${subjectId}&academic_year_id=${academicYearId}`, token);
+}
+
+async function submitLinkResource(payload, token) {
+  const response = await fetch(`${API_BASE_URL}/resources`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.log("BACKEND ERROR:", errorData);  // ✅ ADD THIS
+    throw new Error(errorData.error || "Upload failed");
+  }
+}
+
+async function submitFileResource(formData, token) {
+  const response = await fetch(`${API_BASE_URL}/resources/file`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Upload failed");
+  }
+}
+
+// ─── Validation ───────────────────────────────────────────────────────────────
+
+function validateForm({ title, course, subject, academicYear, resourceType, visibility, contentType, externalLink, file }) {
+  if (!title.trim())     return "Title is required";
+  if (!course)           return "Please select a course";
+  if (!subject)          return "Please select a subject";
+  if (!academicYear)     return "Please select an academic year";
+  if (!resourceType)     return "Please select a resource type";
+  if (!visibility)       return "Please select visibility";
+  if (contentType === "link" && !externalLink.trim()) return "External link is required";
+  if (contentType === "file" && !file)               return "Please select a PDF file";
+  return null;
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 function UploadResource() {
   const navigate = useNavigate();
-  const [error, setError] = useState("");
+
+  // Form meta
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError]           = useState("");
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-
-  const [academicYear, setAcademicYear] = useState("");
-  const [semester, setSemester] = useState("");
-  const [course, setCourse] = useState("");
-  const [subject, setSubject] = useState("");
-
-  const [courses, setCourses] = useState([]);
-  const [subjects, setSubjects] = useState([]);
-
+  // Resource info
+  const [title, setTitle]               = useState("");
+  const [description, setDescription]   = useState("");
   const [resourceType, setResourceType] = useState("");
-  const [visibility, setVisibility] = useState("");
+  const [visibility, setVisibility]     = useState("");
 
+  // Classification
+  const [course, setCourse]             = useState("");
+  const [subject, setSubject]           = useState("");
+  const [academicYear, setAcademicYear] = useState("");
+  const [unit, setUnit]                 = useState("");
+
+  // Dropdown options
+  const [courses, setCourses]             = useState([]);
+  const [subjects, setSubjects]           = useState([]);
+  const [academicYears, setAcademicYears] = useState([]);
+  const [units, setUnits]                 = useState([]);
+
+  // Content
   const [contentType, setContentType] = useState("file");
-  const [file, setFile] = useState(null);
+  const [file, setFile]               = useState(null);
   const [externalLink, setExternalLink] = useState("");
 
+  // ─── Derived ───────────────────────────────────────────────────────────────
+
+  const selectedSubject      = subjects.find((s) => String(s.id) === String(subject));
+  const selectedAcademicYear = academicYears.find((y) => String(y.id) === String(academicYear));
+
+  const canSelectSubject = Boolean(course);
+  const canSelectUnit    = Boolean(subject) && Boolean(academicYear);
+
+  // ─── Effects ───────────────────────────────────────────────────────────────
+
+  // Initial load
   useEffect(() => {
-    fetchCourses();
+    async function loadInitial() {
+      try {
+        const token = await getAuthToken();
+        const [courseData, yearData] = await Promise.all([
+          fetchCourses(token),
+          fetchAcademicYears(token),
+        ]);
+        setCourses(courseData);
+        setAcademicYears(yearData);
+      } catch (err) {
+        setError("Failed to load initial data");
+      }
+    }
+    loadInitial();
   }, []);
 
+  // Subjects depend on course
   useEffect(() => {
-    if (course) {
-      fetchSubjects(course);
-    } else {
+    if (!course) {
       setSubjects([]);
       setSubject("");
+      setUnit("");
+      return;
     }
+    async function loadSubjects() {
+      try {
+        const token = await getAuthToken();
+        const data = await fetchSubjects(course, token);
+        setSubjects(data);
+        setSubject("");
+        setUnit("");
+      } catch (err) {
+        setError("Failed to load subjects");
+      }
+    }
+    loadSubjects();
   }, [course]);
 
-  const fetchCourses = async () => {
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-
-      const response = await fetch(`${API_BASE_URL}/courses`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to load courses");
-      }
-
-      const data = await response.json();
-      setCourses(data);
-    } catch (err) {
-      console.error("Error fetching courses:", err);
-      setError("Failed to load courses");
+  // Units depend on subject + academic year
+  useEffect(() => {
+    if (!subject || !academicYear) {
+      setUnits([]);
+      setUnit("");
+      return;
     }
-  };
-
-  const fetchSubjects = async (courseId) => {
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-
-      const response = await fetch(`${API_BASE_URL}/subjects?course_id=${courseId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to load subjects");
+    async function loadUnits() {
+      try {
+        const token = await getAuthToken();
+        const data = await fetchUnits(subject, academicYear, token);
+        setUnits(data);
+        setUnit("");
+      } catch (err) {
+        setError("Failed to load units");
       }
-
-      const data = await response.json();
-      setSubjects(data);
-    } catch (err) {
-      console.error("Error fetching subjects:", err);
-      setError("Failed to load subjects");
     }
-  };
+    loadUnits();
+  }, [subject, academicYear]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // ─── Handlers ──────────────────────────────────────────────────────────────
+
+  function handleCourseChange(e) {
+    setCourse(e.target.value);
+    setError("");
+  }
+
+  function handleSubjectChange(e) {
+    setSubject(e.target.value);
+    setUnit("");
+    setError("");
+  }
+
+  function handleAcademicYearChange(e) {
+    setAcademicYear(e.target.value);
+    setUnit("");
+    setError("");
+  }
+
+  function handleContentTypeChange(value) {
+    setContentType(value);
+    setFile(null);
+    setExternalLink("");
+  }
+
+  // ✅ FIX: e is optional — handler works via both onClick and onSubmit
+  async function handleSubmit(e) {
+    console.log("SUBMIT TRIGGERED");
+    e?.preventDefault();
     setError("");
 
-    // Validation
-    if (!title.trim()) {
-      setError("Title is required");
-      return;
-    }
-
-    if (!course) {
-      setError("Please select a course");
-      return;
-    }
-
-    if (!subject) {
-      setError("Please select a subject");
-      return;
-    }
-
-    if (!semester) {
-      setError("Please select a semester");
-      return;
-    }
-
-    if (!academicYear) {
-      setError("Please select an academic year");
-      return;
-    }
-
-    if (!resourceType) {
-      setError("Please select a resource type");
-      return;
-    }
-
-    if (!visibility) {
-      setError("Please select visibility scope");
-      return;
-    }
-
-    if (contentType === "link" && !externalLink.trim()) {
-      setError("External link is required");
-      return;
-    }
-
-    if (contentType === "file" && !file) {
-      setError("Please select a PDF file");
+    const validationError = validateForm({
+      title, course, subject, academicYear, resourceType,
+      visibility, contentType, externalLink, file,
+    });
+    console.log("VALIDATION RESULT:", validationError);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
     setSubmitting(true);
-
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
+      const token = await getAuthToken();
 
-      if (!token) {
-        throw new Error("Authentication required");
-      }
+      const subject_code = selectedSubject.code;
+      const start_year   = selectedAcademicYear.start_year;
+      const end_year     = selectedAcademicYear.end_year;
+      const unit_number  = unit || undefined;
 
       if (contentType === "link") {
-        // Submit link resource
         const payload = {
           title: title.trim(),
-          description: description.trim(),
-          resource_type: resourceType,
-          academic_year: Number(academicYear),
-          semester: Number(semester),
-          course_id: Number(course),
-          subject_id: Number(subject),
-          contributor_id: 1,
-          visibility_scope: visibility,
+          description: description.trim() || "No description provided",
+          subject_code,
+          start_year,
+          end_year,
+          unit_number,
           external_url: externalLink.trim(),
+          resource_type: resourceType,
+          visibility,
         };
-
-        const res = await fetch(`${API_BASE_URL}/resources`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || "Upload failed");
-        }
+        console.log("PAYLOAD SENT:", payload);
+        await submitLinkResource(payload, token);
       } else {
-        // Submit file resource
         const formData = new FormData();
         formData.append("file", file);
         formData.append("title", title.trim());
         formData.append("description", description.trim());
+        formData.append("subject_code", subject_code);
+        formData.append("start_year", start_year);
+        formData.append("end_year", end_year);
         formData.append("resource_type", resourceType);
-        formData.append("academic_year", academicYear);
-        formData.append("semester", semester);
-        formData.append("course_id", course);
-        formData.append("subject_id", subject);
-        formData.append("contributor_id", 1);
-        formData.append("visibility_scope", visibility);
+        formData.append("visibility", visibility);
+        if (unit_number) formData.append("unit_number", unit_number);
 
-        const res = await fetch(`${API_BASE_URL}/resources/file`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        });
-
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || "Upload failed");
-        }
+        await submitFileResource(formData, token);
       }
 
-      // Success - navigate to browse page
       navigate("/browse");
     } catch (err) {
-      console.error("Upload error:", err);
       setError(err.message || "Upload failed. Please try again.");
     } finally {
       setSubmitting(false);
     }
-  };
+  }
 
-  const handleCancel = () => {
-    navigate("/");
-  };
+  // ─── JSX ───────────────────────────────────────────────────────────────────
 
   return (
     <div className="upload-page">
       <div className="upload-card">
         <header className="page-header-upload">
           <h1 className="page-title">Upload Resource</h1>
-          <p className="page-subtitle">
-            Contribute to the institutional knowledge repository
-          </p>
+          <p className="page-subtitle">Contribute to the institutional knowledge repository</p>
         </header>
 
         <form className="upload-form" onSubmit={handleSubmit}>
-          {/* Resource Metadata */}
+
+          {/* ── Section: Resource Information ── */}
           <section className="form-section">
             <h2 className="section-title">Resource Information</h2>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="title">
-                Title *
-              </label>
+              <label className="form-label" htmlFor="title">Title *</label>
               <input
                 id="title"
                 className="form-input"
@@ -247,9 +299,7 @@ function UploadResource() {
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="description">
-                Description
-              </label>
+              <label className="form-label" htmlFor="description">Description</label>
               <textarea
                 id="description"
                 className="form-textarea"
@@ -264,15 +314,87 @@ function UploadResource() {
 
           <div className="section-divider" />
 
-          {/* Classification */}
+          {/* ── Section: Classification ── */}
           <section className="form-section">
             <h2 className="section-title">Classification</h2>
 
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label" htmlFor="resource-type">
-                  Resource Type *
-                </label>
+                <label className="form-label" htmlFor="course">Course *</label>
+                <select
+                  id="course"
+                  className="form-select"
+                  value={course}
+                  onChange={handleCourseChange}
+                  disabled={submitting}
+                >
+                  <option value="">Select course</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="subject">Subject *</label>
+                <select
+                  id="subject"
+                  className="form-select"
+                  value={subject}
+                  onChange={handleSubjectChange}
+                  disabled={submitting || !canSelectSubject}
+                >
+                  <option value="">
+                    {canSelectSubject ? "Select subject" : "Select a course first"}
+                  </option>
+                  {subjects.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label" htmlFor="academic-year">Academic Year *</label>
+                <select
+                  id="academic-year"
+                  className="form-select"
+                  value={academicYear}
+                  onChange={handleAcademicYearChange}
+                  disabled={submitting}
+                >
+                  <option value="">Select year</option>
+                  {academicYears.map((y) => (
+                    <option key={y.id} value={y.id}>
+                      {y.start_year} – {y.end_year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="unit">Unit (optional)</label>
+                <select
+                  id="unit"
+                  className="form-select"
+                  value={unit}
+                  onChange={(e) => setUnit(e.target.value)}
+                  disabled={submitting || !canSelectUnit}
+                >
+                  <option value="">
+                    {canSelectUnit ? "Select unit (optional)" : "Select subject & year first"}
+                  </option>
+                  {units.map((u) => (
+                    <option key={u.id} value={u.unit_number}>Unit {u.unit_number}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label" htmlFor="resource-type">Resource Type *</label>
                 <select
                   id="resource-type"
                   className="form-select"
@@ -287,100 +409,12 @@ function UploadResource() {
                   <option value="project_material">Project Material</option>
                 </select>
               </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="academic-year">
-                  Academic Year *
-                </label>
-                <select
-                  id="academic-year"
-                  className="form-select"
-                  value={academicYear}
-                  onChange={(e) => setAcademicYear(e.target.value)}
-                  disabled={submitting}
-                >
-                  <option value="">Select year</option>
-                  <option value="2025">2025</option>
-                  <option value="2024">2024</option>
-                  <option value="2023">2023</option>
-                  <option value="2022">2022</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label" htmlFor="semester">
-                  Semester *
-                </label>
-                <select
-                  id="semester"
-                  className="form-select"
-                  value={semester}
-                  onChange={(e) => setSemester(e.target.value)}
-                  disabled={submitting}
-                >
-                  <option value="">Select semester</option>
-                  <option value="1">Semester 1</option>
-                  <option value="2">Semester 2</option>
-                  <option value="3">Semester 3</option>
-                  <option value="4">Semester 4</option>
-                  <option value="5">Semester 5</option>
-                  <option value="6">Semester 6</option>
-                  <option value="7">Semester 7</option>
-                  <option value="8">Semester 8</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="course">
-                  Course *
-                </label>
-                <select
-                  id="course"
-                  className="form-select"
-                  value={course}
-                  onChange={(e) => setCourse(e.target.value)}
-                  disabled={submitting}
-                >
-                  <option value="">Select course</option>
-                  {courses.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label" htmlFor="subject">
-                  Subject *
-                </label>
-                <select
-                  id="subject"
-                  className="form-select"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  disabled={submitting || !course}
-                >
-                  <option value="">
-                    {course ? "Select subject" : "Select a course first"}
-                  </option>
-                  {subjects.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
           </section>
 
           <div className="section-divider" />
 
-          {/* Content Source */}
+          {/* ── Section: Content Source ── */}
           <section className="form-section">
             <h2 className="section-title">Content Source</h2>
 
@@ -390,18 +424,17 @@ function UploadResource() {
                   type="radio"
                   className="radio-input"
                   checked={contentType === "file"}
-                  onChange={() => setContentType("file")}
+                  onChange={() => handleContentTypeChange("file")}
                   disabled={submitting}
                 />
                 <span>File Upload (PDF)</span>
               </label>
-
               <label className="radio-label">
                 <input
                   type="radio"
                   className="radio-input"
                   checked={contentType === "link"}
-                  onChange={() => setContentType("link")}
+                  onChange={() => handleContentTypeChange("link")}
                   disabled={submitting}
                 />
                 <span>External Link</span>
@@ -410,9 +443,7 @@ function UploadResource() {
 
             {contentType === "file" && (
               <div className="form-group">
-                <label className="form-label" htmlFor="file-upload">
-                  Upload PDF File *
-                </label>
+                <label className="form-label" htmlFor="file-upload">Upload PDF File *</label>
                 <input
                   id="file-upload"
                   type="file"
@@ -421,17 +452,13 @@ function UploadResource() {
                   onChange={(e) => setFile(e.target.files[0])}
                   disabled={submitting}
                 />
-                {file && (
-                  <p className="file-hint">Selected: {file.name}</p>
-                )}
+                {file && <p className="file-hint">Selected: {file.name}</p>}
               </div>
             )}
 
             {contentType === "link" && (
               <div className="form-group">
-                <label className="form-label" htmlFor="external-link">
-                  External Link *
-                </label>
+                <label className="form-label" htmlFor="external-link">External Link *</label>
                 <input
                   id="external-link"
                   className="form-input"
@@ -447,14 +474,12 @@ function UploadResource() {
 
           <div className="section-divider" />
 
-          {/* Visibility */}
+          {/* ── Section: Visibility ── */}
           <section className="form-section">
             <h2 className="section-title">Visibility</h2>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="visibility">
-                Who can access this resource? *
-              </label>
+              <label className="form-label" htmlFor="visibility">Who can access this resource? *</label>
               <select
                 id="visibility"
                 className="form-select"
@@ -463,9 +488,9 @@ function UploadResource() {
                 disabled={submitting}
               >
                 <option value="">Select visibility</option>
-                <option value="public">Public - Everyone</option>
-                <option value="course">Course Only - Enrolled students</option>
-                <option value="restricted">Restricted - Approved users</option>
+                <option value="public">Public – Everyone</option>
+                <option value="course">Course Only – Enrolled students</option>
+                <option value="restricted">Restricted – Approved users</option>
               </select>
             </div>
           </section>
@@ -477,30 +502,29 @@ function UploadResource() {
           )}
 
           <div className="form-actions">
+            {/* ✅ FIX: type="button" + onClick bypasses native form submit entirely */}
             <button
               className="button-primary"
-              type="submit"
+              type="button"
+              onClick={handleSubmit}
               disabled={submitting}
             >
               {submitting ? (
-                <>
-                  <span className="spinner"></span>
-                  <span>Uploading...</span>
-                </>
+                <><span className="spinner" /><span>Uploading...</span></>
               ) : (
                 "Upload Resource"
               )}
             </button>
-
             <button
               className="button-secondary"
               type="button"
-              onClick={handleCancel}
+              onClick={() => navigate("/")}
               disabled={submitting}
             >
               Cancel
             </button>
           </div>
+
         </form>
       </div>
     </div>

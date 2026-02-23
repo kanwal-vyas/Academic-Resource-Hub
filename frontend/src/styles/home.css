@@ -80,10 +80,25 @@
 
 .resource-meta {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
   gap: var(--space-md);
   padding-top: var(--space-md);
   border-top: 1px solid var(--border);
+}
+
+.meta-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.meta-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-xs);
+  flex-shrink: 0;
 }
 
 .meta-item {
@@ -92,6 +107,11 @@
   display: flex;
   align-items: center;
   gap: var(--space-xs);
+}
+
+.meta-sub {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
 }
 
 .resource-button {
@@ -124,27 +144,9 @@
   box-shadow: var(--shadow-lg);
 }
 
-.resource-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: var(--space-md);
-}
-
-.meta-left {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
-
-.meta-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--space-xs);
-  flex-shrink: 0;
-}
-
+/* ===============================
+   Contributor Badges
+   =============================== */
 .verified-badge {
   display: inline-flex;
   align-items: center;
@@ -184,11 +186,6 @@
   border-color: rgba(246, 224, 94, 0.3);
 }
 
-.meta-sub {
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-}
-
 /* ===============================
    Chips
    =============================== */
@@ -225,6 +222,114 @@
   background: linear-gradient(135deg, #1f3d2f 0%, #2a4f3c 100%);
   border-color: var(--accent-light);
   color: var(--accent);
+}
+
+/* ===============================
+   Resource Type Badge
+   =============================== */
+.resource-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  letter-spacing: 0.025em;
+  border: 1.5px solid transparent;
+}
+
+/* Lecture Notes — soft forest green */
+.resource-badge--fgreen {
+  background-color: #ecf5ee;
+  color: #2d6a4f;
+  border-color: #b2d8bc;
+}
+
+/* Question Paper — soft purple */
+.resource-badge--purple {
+  background-color: #f4eeff;
+  color: #5c3d8f;
+  border-color: #cdb8ea;
+}
+
+/* Research Paper — soft orange */
+.resource-badge--orange {
+  background-color: #fff3eb;
+  color: #8a4a1c;
+  border-color: #f0c4a0;
+}
+
+/* Project Material — soft yellow */
+.resource-badge--yellow {
+  background-color: #fdfbe8;
+  color: #7a6500;
+  border-color: #e8d98c;
+}
+
+/* Other — neutral grey */
+.resource-badge--grey {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border-color: #d1d5db;
+}
+
+/* External Link — accent green */
+.resource-badge--link {
+  background-color: #eef5f1;
+  color: #6b8e7f;
+  border-color: #a8c4b5;
+}
+
+/* File Upload — interaction blue */
+.resource-badge--file {
+  background-color: #edf1f7;
+  color: #5d7a99;
+  border-color: #819cb8;
+}
+
+/* Dark mode — resource type */
+.dark .resource-badge--fgreen {
+  background-color: rgba(44, 107, 79, 0.15);
+  color: #7ecda0;
+  border-color: rgba(126, 205, 160, 0.3);
+}
+
+.dark .resource-badge--purple {
+  background-color: rgba(92, 61, 143, 0.15);
+  color: #b49ee0;
+  border-color: rgba(180, 158, 224, 0.3);
+}
+
+.dark .resource-badge--orange {
+  background-color: rgba(138, 74, 28, 0.15);
+  color: #e0a878;
+  border-color: rgba(224, 168, 120, 0.3);
+}
+
+.dark .resource-badge--yellow {
+  background-color: rgba(122, 101, 0, 0.15);
+  color: #d4bb5a;
+  border-color: rgba(212, 187, 90, 0.3);
+}
+
+.dark .resource-badge--grey {
+  background-color: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+  border-color: rgba(156, 163, 175, 0.3);
+}
+
+/* Dark mode — content type */
+.dark .resource-badge--link {
+  background-color: rgba(107, 142, 127, 0.15);
+  color: #a8c4b5;
+  border-color: rgba(168, 196, 181, 0.3);
+}
+
+.dark .resource-badge--file {
+  background-color: rgba(93, 122, 153, 0.15);
+  color: #819cb8;
+  border-color: rgba(129, 156, 184, 0.3);
 }
 
 /* ===============================

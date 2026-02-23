@@ -112,7 +112,7 @@ function Home() {
     setSelectedResourceId(resource.id);
 
     try {
-      if (resource.resource_type === "external_link") {
+      if (resource.content_type === "external_link") {
         const url = formatUrl(resource.external_url);
         window.open(url, "_blank", "noopener,noreferrer");
       } else {
@@ -190,16 +190,40 @@ function Home() {
 // ===============================
 // Resource Components
 // ===============================
+const typeClassMap = {
+  lecture_notes:    "resource-badge--fgreen",
+  question_paper:   "resource-badge--purple",
+  research_paper:   "resource-badge--orange",
+  project_material: "resource-badge--yellow",
+  other:            "resource-badge--grey",
+};
+
 function ResourceCard({ resource, isSelected, onView }) {
   const resourceTypeFormatted = formatResourceType(resource.resource_type);
   const contributorTypeFormatted = formatContributorType(resource.contributor_type);
+  const badgeClass = typeClassMap[resource.resource_type] || "";
+  const contentTypeClass = resource.content_type === "external_link"
+    ? "resource-badge--link"
+    : "resource-badge--file";
+  const contentTypeLabel = resource.content_type === "external_link"
+    ? "External Link"
+    : "File";
 
   return (
     <article className="card resource-card">
       <header className="resource-header">
         <h3>{resource.title}</h3>
         <div className="chips">
-          <span className="chip chip-type">{resourceTypeFormatted}</span>
+          {badgeClass ? (
+            <span className={`resource-badge ${badgeClass}`}>
+              {resourceTypeFormatted}
+            </span>
+          ) : (
+            <span className="chip chip-type">{resourceTypeFormatted}</span>
+          )}
+          <span className={`resource-badge ${contentTypeClass}`}>
+            {contentTypeLabel}
+          </span>
           <span className="chip chip-year">{resource.academic_year}</span>
         </div>
       </header>

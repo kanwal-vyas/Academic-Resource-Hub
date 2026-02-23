@@ -31,6 +31,14 @@ const RESOURCE_TYPE_CONFIG = {
   },
 };
 
+const typeClassMap = {
+  lecture_notes: "resource-badge--fgreen",
+  question_paper: "resource-badge--purple",
+  research_paper: "resource-badge--orange",
+  project_material: "resource-badge--yellow",
+  other: "resource-badge--grey",
+};
+
 // ===============================
 // Utility Functions
 // ===============================
@@ -162,7 +170,7 @@ function Browse() {
     setSelectedResourceId(resource.id);
 
     try {
-      if (resource.resource_type === "external_link") {
+      if (resource.content_type === "external_link") {
         const url = formatUrl(resource.external_url);
         window.open(url, "_blank", "noopener,noreferrer");
       } else {
@@ -361,14 +369,30 @@ function FilterGroup({ label, children }) {
 function ResourceCard({ resource, isSelected, onView }) {
   const resourceType = getResourceTypeDisplay(resource.resource_type);
   const contributorTypeFormatted = formatContributorType(resource.contributor_type);
+  const badgeClass = typeClassMap[resource.resource_type] || "";
+  const contentTypeClass = resource.content_type === "external_link"
+    ? "resource-badge--link"
+    : "resource-badge--file";
+  const contentTypeLabel = resource.content_type === "external_link"
+    ? "External Link"
+    : "File";
 
   return (
     <article className={`card resource-card ${isSelected ? "selected" : ""}`}>
       <header className="resource-header">
         <h3>{resource.title}</h3>
         <div className="chips">
-          <span className={`chip ${resourceType.className}`}>
-            {resourceType.label}
+          {badgeClass ? (
+            <span className={`resource-badge ${badgeClass}`}>
+              {resourceType.label}
+            </span>
+          ) : (
+            <span className={`chip ${resourceType.className}`}>
+              {resourceType.label}
+            </span>
+          )}
+          <span className={`resource-badge ${contentTypeClass}`}>
+            {contentTypeLabel}
           </span>
           <span className="chip chip-year">{resource.academic_year}</span>
         </div>
