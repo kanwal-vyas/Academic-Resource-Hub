@@ -4,10 +4,8 @@ import { useAuth } from "../auth/AuthContext";
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
 
-  const canUpload = user && user.role === "authenticated";
-
-  if (!canUpload) {
-    return <Navigate to="/" replace />;
+  if (!user) {
+    return <Navigate to="/login" replace />;
   }
 
   return children;

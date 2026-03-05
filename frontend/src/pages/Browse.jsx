@@ -76,6 +76,7 @@ function useResources(user) {
   }, [user]);
 
   const fetchResources = async () => {
+    console.log("TOKEN:", token);
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData?.session?.access_token;
 

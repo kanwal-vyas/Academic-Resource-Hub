@@ -213,6 +213,8 @@ app.get('/resources/latest', authMiddleware, async (req, res) => {
 
     const result = await pool.query(query);
 
+    console.log("RAW API RESPONSE:", result);
+
     res.json({
       success: true,
       data: result.rows
@@ -371,6 +373,39 @@ app.get('/units', authMiddleware, async (req, res) => {
       success: false,
       error: 'Failed to fetch units'
     });
+  }
+});
+
+/**
+ * GET /faculty
+ * Fetch all faculty members with their profiles and subjects
+ */
+
+app.get('/faculty', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        u.id,
+        u.full_name,
+        fp.education,
+        fp.research_interests,
+        fp.phd_topic,
+        ARRAY_AGG(DISTINCT s.name) AS subjects
+      FROM users u
+      LEFT JOIN faculty_profiles fp ON u.id = fp.user_id
+      LEFT JOIN subject_offerings so ON u.id = so.faculty_id
+      LEFT JOIN subjects s ON so.subject_id = s.id
+      WHERE u.role = 'faculty'
+      GROUP BY u.id, fp.education, fp.research_interests, fp.phd_topic
+    `);
+
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false });
   }
 });
 
@@ -804,6 +839,10 @@ app.delete('/resources/:id', authMiddleware, async (req, res) => {
       error: 'Failed to delete resource'
     });
   }
+});
+
+app.get("/whoami", authMiddleware, (req, res) => {
+  res.json(req.user);
 });
 
 // ============================================================================

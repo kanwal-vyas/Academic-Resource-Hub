@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../auth/AuthContext";
-import "../styles/login.css";
+import "../styles/auth.css";
 
 function Login() {
   const { login } = useAuth();
@@ -10,6 +10,17 @@ function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem("theme") || "light"
+  );
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () =>
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -39,10 +50,27 @@ function Login() {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-container">
-        <div className="login-card">
-          <div className="login-header">
+    <div className="auth-page">
+      <button
+        className="theme-toggle"
+        onClick={toggleTheme}
+        aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      >
+        {theme === "dark" ? (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M12 2V4M12 20V22M4.22 4.22L5.64 5.64M18.36 18.36L19.78 19.78M2 12H4M20 12H22M4.22 19.78L5.64 18.36M18.36 5.64L19.78 4.22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        ) : (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </button>
+
+      <div className="auth-container">
+        <div className="auth-card">
+          <div className="auth-header">
             <div className="logo-badge">
               <svg
                 width="28"
@@ -74,13 +102,13 @@ function Login() {
                 />
               </svg>
             </div>
-            <h1 className="login-title">Academic Resource Hub</h1>
-            <p className="login-subtitle">
+            <h1 className="auth-title">Academic Resource Hub</h1>
+            <p className="auth-subtitle">
               Sign in to access shared academic resources
             </p>
           </div>
 
-          <form className="login-form" onSubmit={handleLogin}>
+          <form className="auth-form" onSubmit={handleLogin}>
             <div className="form-group">
               <label className="form-label" htmlFor="email">
                 Email Address
@@ -117,9 +145,7 @@ function Login() {
                   className="password-toggle"
                   onClick={() => setShowPassword(!showPassword)}
                   tabIndex="-1"
-                  aria-label={
-                    showPassword ? "Hide password" : "Show password"
-                  }
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <svg
@@ -180,7 +206,7 @@ function Login() {
 
             <button
               type="submit"
-              className="login-button"
+              className="auth-submit"
               disabled={loading}
             >
               {loading ? (
@@ -194,9 +220,13 @@ function Login() {
             </button>
           </form>
 
-          <div className="login-footer">
+          <div className="auth-footer">
             <a href="#" className="footer-link">
               Forgot password?
+            </a>
+            <span className="footer-divider">•</span>
+            <a href="/signup" className="footer-link">
+              Create account
             </a>
             <span className="footer-divider">•</span>
             <a href="#" className="footer-link">

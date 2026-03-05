@@ -5,35 +5,72 @@ import Home from "./pages/Home";
 import Browse from "./pages/Browse";
 import UploadResource from "./pages/UploadResource";
 import Login from "./pages/Login";
+import SignUp from "./pages/SignUp";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
 
 function App({ onToggleTheme, isDark }) {
   const { user } = useAuth();
 
-  // If not logged in, show only login page
-  if (!user) {
-    return <Login isDark={isDark} onToggleTheme={onToggleTheme} />;
-  }
-
   return (
     <div className="app">
-      <Navbar isDark={isDark} onToggleTheme={onToggleTheme} />
-      
+      {user && <Navbar isDark={isDark} onToggleTheme={onToggleTheme} />}
+
       <main className="main-content">
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/browse" element={<Browse />} />
-          <Route
-            path="/upload"
-            element={
-              <ProtectedRoute>
-                <UploadResource />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+
+  {/* Public */}
+  <Route
+    path="/login"
+    element={
+      user ? <Navigate to="/" replace /> :
+      <Login isDark={isDark} onToggleTheme={onToggleTheme} />
+    }
+  />
+
+  <Route
+    path="/signup"
+    element={
+      user ? <Navigate to="/" replace /> :
+      <SignUp />
+    }
+  />
+
+  {/* Protected */}
+  <Route
+    path="/"
+    element={
+      <ProtectedRoute>
+        <Home />
+      </ProtectedRoute>
+    }
+  />
+
+  <Route
+    path="/browse"
+    element={
+      <ProtectedRoute>
+        <Browse />
+      </ProtectedRoute>
+    }
+  />
+
+  <Route
+    path="/upload"
+    element={
+      <ProtectedRoute>
+        <UploadResource />
+      </ProtectedRoute>
+    }
+  />
+
+  {/* Fallback */}
+  <Route
+    path="*"
+    element={<Navigate to={user ? "/" : "/login"} replace />}
+  />
+
+</Routes>
       </main>
     </div>
   );
