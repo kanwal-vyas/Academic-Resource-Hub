@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import pool from './db.js'
 import cors from "cors";
 import { authMiddleware } from './middleware/auth.js';
-
+import facultyRoutes from './routes/facultyRoutes.js';
 const app = express();
 
 // Initialize Supabase client
@@ -129,6 +129,8 @@ app.use(cors({
   origin: "http://localhost:5173",
   credentials: true
 }));
+
+app.use('/api/faculty', facultyRoutes);
 
 /**
  * GET /resources

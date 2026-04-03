@@ -1,33 +1,14 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../auth/AuthContext";
+import FacultyCard from "../components/FacultyCard";
 import "../styles/home.css";
 
 // ===============================
 // Constants
 // ===============================
 const API_BASE_URL = "http://localhost:5000";
-
-const FACULTY_DATA = [
-  {
-    id: 1,
-    initials: "DS",
-    name: "Dr. Priya Sharma",
-    designation: "Associate Professor",
-    expertise: ["Data Structures", "Algorithms", "Machine Learning"],
-    phdTopic: "Optimization Algorithms for Large-Scale Networks",
-    researchInterests: "Graph Theory, Computational Complexity",
-  },
-  {
-    id: 2,
-    initials: "AM",
-    name: "Prof. Arjun Mehta",
-    designation: "Professor",
-    expertise: ["DBMS", "Big Data", "Cloud Computing"],
-    phdTopic: "Distributed Database Systems in Cloud Environments",
-    researchInterests: "NoSQL, Query Optimization",
-  },
-];
 
 // ===============================
 // Utility Functions
@@ -47,7 +28,7 @@ const formatContributorType = (type) => {
 };
 
 // ===============================
-// Custom Hook
+// Custom Hooks
 // ===============================
 function useLatestResources(user) {
   const [resources, setResources] = useState([]);
@@ -100,12 +81,58 @@ function useLatestResources(user) {
   return { resources, loading, error };
 }
 
+function useLatestFaculty(user) {
+  const [faculty, setFaculty] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (user) {
+      fetchLatestFaculty();
+    }
+  }, [user]);
+
+  const fetchLatestFaculty = async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
+
+    if (!token) {
+      setError("Authentication required");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/faculty/recent`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setFaculty(data);
+    } catch (err) {
+      console.error("Error fetching faculty:", err);
+      setError("Failed to load faculty");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { faculty, loading, error };
+}
+
 // ===============================
 // Main Component
 // ===============================
 function Home() {
   const { user } = useAuth();
   const { resources, loading, error } = useLatestResources(user);
+  const { faculty, loading: facultyLoading, error: facultyError } = useLatestFaculty(user);
   const [selectedResourceId, setSelectedResourceId] = useState(null);
 
   const handleViewResource = async (resource) => {
@@ -181,7 +208,7 @@ function Home() {
         <Divider />
 
         {/* Faculty Section */}
-        <FacultySection />
+        <FacultySection faculty={faculty} loading={facultyLoading} error={facultyError} />
       </div>
     </main>
   );
@@ -263,59 +290,25 @@ function ResourceCard({ resource, isSelected, onView }) {
 // ===============================
 // Faculty Components
 // ===============================
-function FacultySection() {
+function FacultySection({ faculty, loading, error }) {
   return (
     <section className="faculty-section">
       <h2>Faculty Expertise</h2>
       <p className="text-muted">
         Connect with our distinguished faculty members
       </p>
-      <div className="faculty-grid">
-        {FACULTY_DATA.map((faculty) => (
-          <FacultyCard key={faculty.id} faculty={faculty} />
-        ))}
-      </div>
+
+      {loading && <p>Loading...</p>}
+      {error && <p>Failed to load faculty</p>}
+
+      {!loading && !error && (
+        <div className="faculty-grid">
+          {faculty.map((f) => (
+            <FacultyCard key={f.id} faculty={f} />
+          ))}
+        </div>
+      )}
     </section>
-  );
-}
-
-function FacultyCard({ faculty }) {
-  return (
-    <article className="card faculty-card">
-      <div
-        className="faculty-avatar"
-        aria-label={`Avatar for ${faculty.name}`}
-      >
-        {faculty.initials}
-      </div>
-
-      <h3>{faculty.name}</h3>
-      <p className="faculty-designation">{faculty.designation}</p>
-
-      <div className="chips">
-        {faculty.expertise.map((skill) => (
-          <span key={skill} className="chip">
-            {skill}
-          </span>
-        ))}
-      </div>
-
-      <div className="faculty-info">
-        <p>
-          <strong>PhD Topic:</strong> {faculty.phdTopic}
-        </p>
-        <p>
-          <strong>Research Interests:</strong> {faculty.researchInterests}
-        </p>
-      </div>
-
-      <button
-        className="faculty-button"
-        aria-label={`View profile for ${faculty.name}`}
-      >
-        View Profile
-      </button>
-    </article>
   );
 }
 

@@ -1,0 +1,220 @@
+/* ===============================
+   Faculty Profile Page
+   =============================== */
+
+.fp-layout {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding-bottom: var(--space-2xl);
+}
+
+/* ── Header Card ── */
+.fp-header-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-xl);
+}
+
+.fp-avatar {
+  width: 80px;
+  height: 80px;
+  font-size: 1.75rem;
+  flex-shrink: 0;
+
+  position: relative;
+  overflow: hidden;
+
+  background: linear-gradient(
+    135deg,
+    var(--accent) 0%,
+    var(--interaction) 100%
+  );
+
+  color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  box-shadow: var(--shadow-md);
+
+  transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
+}
+
+/* highlight sweep layer */
+.fp-avatar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.25) 50%,
+    transparent 70%
+  );
+  opacity: 0;
+  transform: translateX(-100%);
+  transition: transform 0.5s ease, opacity 0.3s ease;
+}
+
+.fp-avatar:hover {
+  transform: translateY(-6px) scale(1.08);
+  box-shadow: var(--shadow-lg);
+  filter: brightness(1.05);
+}
+
+.fp-avatar:hover::after {
+  opacity: 1;
+  transform: translateX(100%);
+}
+
+.fp-avatar:active {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: var(--shadow-sm);
+}
+
+.fp-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.fp-name {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.fp-subtitle {
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ── Info Grid ── */
+.fp-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-lg);
+  margin-top: var(--space-sm);
+}
+
+.fp-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-lg);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.fp-info-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.fp-info-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin: 0;
+}
+
+.fp-info-value {
+  font-size: 0.9375rem;
+  color: var(--text);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ── Availability Card ── */
+.fp-availability-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-lg);
+  margin-top: var(--space-sm);
+}
+
+.fp-availability-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.fp-availability-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-full);
+  border: 1.5px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.fp-badge--open {
+  background-color: var(--surface);
+  color: var(--accent);
+  border-color: var(--accent-light);
+}
+
+.fp-badge--closed {
+  background-color: var(--surface);
+  color: var(--text-secondary);
+  border-color: var(--border);
+  opacity: 0.6;
+}
+
+.fp-badge--open:hover {
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+  opacity: 0.9;
+}
+
+.fp-badge--closed:hover {
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+  opacity: 0.8;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .fp-header-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .fp-name {
+    font-size: 1.375rem;
+  }
+
+  .fp-info-grid {
+    grid-template-columns: 1fr;
+  }
+}

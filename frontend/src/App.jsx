@@ -6,6 +6,8 @@ import Browse from "./pages/Browse";
 import UploadResource from "./pages/UploadResource";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
+import FacultyDirectory from "./pages/FacultyDirectory";
+import FacultyProfile from "./pages/FacultyProfile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
 
@@ -63,6 +65,24 @@ function App({ onToggleTheme, isDark }) {
       </ProtectedRoute>
     }
   />
+
+  <Route
+    path="/faculty"
+    element={
+      <ProtectedRoute>
+        <FacultyDirectory />
+      </ProtectedRoute>
+    }
+  />
+
+  <Route
+  path="/faculty/:id"
+  element={
+    <ProtectedRoute>
+      <FacultyProfile />
+    </ProtectedRoute>
+  }
+/>
 
   {/* Fallback */}
   <Route
