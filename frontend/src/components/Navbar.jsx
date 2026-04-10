@@ -1,14 +1,11 @@
 import { Link, NavLink } from "react-router-dom";
+import { useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import "../styles/navbar.css";
 
 function Navbar({ isDark, onToggleTheme }) {
   const { user, logout } = useAuth();
-
-  const canUpload = !!user;
-
-    console.log("USER:", user);
-    console.log("CAN UPLOAD:", canUpload);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -19,6 +16,14 @@ function Navbar({ isDark, onToggleTheme }) {
       <div className="header-container">
         {/* Left - Navigation */}
         <nav className="header-left">
+          <button
+            className="header-button button-secondary button-icon"
+            onClick={() => setSidebarOpen((prev) => !prev)}
+            aria-label="Toggle sidebar"
+          >
+            ☰
+          </button>
+
           <NavLink
             to="/"
             className={({ isActive }) =>
@@ -27,26 +32,6 @@ function Navbar({ isDark, onToggleTheme }) {
           >
             Home
           </NavLink>
-
-          <NavLink
-            to="/browse"
-            className={({ isActive }) =>
-              `header-button button-secondary ${isActive ? "active" : ""}`
-            }
-          >
-            Browse
-          </NavLink>
-
-          {canUpload && (
-            <NavLink
-              to="/upload"
-              className={({ isActive }) =>
-                `header-button button-primary ${isActive ? "active" : ""}`
-              }
-            >
-              + Add Resource
-            </NavLink>
-          )}
         </nav>
 
         {/* Center - Title */}
