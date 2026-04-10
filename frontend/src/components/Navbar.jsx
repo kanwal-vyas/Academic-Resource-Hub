@@ -1,24 +1,17 @@
 import { Link, NavLink } from "react-router-dom";
-import { useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import "../styles/navbar.css";
 
-function Navbar({ isDark, onToggleTheme }) {
+function Navbar({ isDark, onToggleTheme, toggleSidebar }) {
   const { user, logout } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const handleLogout = () => {
-    logout();
-  };
 
   return (
     <header className="app-header">
       <div className="header-container">
-        {/* Left - Navigation */}
         <nav className="header-left">
           <button
             className="header-button button-secondary button-icon"
-            onClick={() => setSidebarOpen((prev) => !prev)}
+            onClick={toggleSidebar}
             aria-label="Toggle sidebar"
           >
             ☰
@@ -34,14 +27,12 @@ function Navbar({ isDark, onToggleTheme }) {
           </NavLink>
         </nav>
 
-        {/* Center - Title */}
         <div className="header-center">
           <Link to="/" className="app-title-link">
             <h1 className="app-title">The Academic Resource Hub</h1>
           </Link>
         </div>
 
-        {/* Right - Theme & Auth */}
         <div className="header-right">
           <button
             className="header-button button-theme"
@@ -54,7 +45,7 @@ function Navbar({ isDark, onToggleTheme }) {
 
           <button
             className="header-button button-outline"
-            onClick={handleLogout}
+            onClick={logout}
           >
             Logout
           </button>
