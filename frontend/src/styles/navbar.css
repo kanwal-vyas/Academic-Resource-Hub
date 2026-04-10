@@ -5,11 +5,16 @@
   position: sticky;
   top: 0;
   z-index: 1000;
-  background-color: var(--surface);
+  background-color: rgba(var(--surface-rgb), 0.85);
   border-bottom: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
+/* ===============================
+   Layout
+   =============================== */
 .header-container {
   max-width: 1400px;
   margin: 0 auto;
@@ -43,7 +48,7 @@
 }
 
 /* ===============================
-   Title
+   Typography
    =============================== */
 .app-title-link {
   text-decoration: none;
@@ -59,30 +64,32 @@
 }
 
 /* ===============================
-   Header Buttons
+   Base Button
    =============================== */
 .header-button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
   padding: var(--space-sm) var(--space-lg);
   font-size: 0.9375rem;
   font-weight: 600;
   font-family: inherit;
   border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all var(--transition-base);
   border: none;
+  cursor: pointer;
   white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
   text-decoration: none;
+  transition: all var(--transition-base);
 }
 
-/* Primary Button */
+/* ===============================
+   Button Variants
+   =============================== */
 .button-primary {
   background-color: var(--accent);
   color: var(--surface);
-  box-shadow: var(--shadow-sm);
   border: 2px solid transparent;
+  box-shadow: var(--shadow-sm);
 }
 
 .button-primary:hover {
@@ -96,7 +103,6 @@
   box-shadow: var(--shadow-md);
 }
 
-/* Secondary Button */
 .button-secondary {
   background-color: transparent;
   color: var(--text-secondary);
@@ -116,7 +122,6 @@
   font-weight: 700;
 }
 
-/* Outline Button */
 .button-outline {
   background-color: transparent;
   color: var(--text-secondary);
@@ -129,7 +134,6 @@
   color: var(--text);
 }
 
-/* Theme Button */
 .button-theme {
   background-color: transparent;
   color: var(--text);
@@ -151,7 +155,7 @@
 }
 
 /* ===============================
-   Responsive Design
+   Responsive
    =============================== */
 @media (max-width: 1024px) {
   .header-center {

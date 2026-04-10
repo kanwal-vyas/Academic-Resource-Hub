@@ -60,15 +60,11 @@ body {
    App-level Typography (SCOPED)
    =============================== */
 
+   .main-content {
+  min-height: calc(100vh - 72px);
+}
 .app p {
   font-weight: 400;
-}
-
-   .app-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background-color: var(--surface);
 }
 
    .app h1 {
@@ -178,7 +174,6 @@ button:focus-visible {
 html,
 body {
   height: auto;
-  overflow-y: auto;
 }
 
 .app {
