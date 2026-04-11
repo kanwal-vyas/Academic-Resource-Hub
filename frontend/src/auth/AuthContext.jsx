@@ -3,25 +3,50 @@ import { supabase } from "../supabaseClient";
 
 const AuthContext = createContext(null);
 
+const API_BASE_URL = "http://localhost:5000";
+
+// Fetch the full user object from backend using the Supabase token
+async function fetchBackendUser(token) {
+  const res = await fetch(`${API_BASE_URL}/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    console.error("Failed to fetch /me:", res.status);
+    return null;
+  }
+
+  return res.json(); // { id, email, role, is_verified }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
 
+  // Shared handler — called on session restore AND on auth state changes
+  async function handleSession(session) {
+    if (!session) {
+      setUser(null);
+      return;
+    }
+
+    const backendUser = await fetchBackendUser(session.access_token);
+    setUser(backendUser); // null if fetch failed — components must handle this
+  }
+
   useEffect(() => {
-    // Get current session on load
+    // Restore existing session on page load
     supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user || null);
+      handleSession(data.session ?? null);
     });
 
-    // Listen for login/logout changes
+    // React to login / logout / token refresh
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setUser(session?.user || null);
+        handleSession(session);
       }
     );
 
-    return () => {
-      listener.subscription.unsubscribe();
-    };
+    return () => listener.subscription.unsubscribe();
   }, []);
 
   const login = async (email, password) => {
@@ -30,15 +55,13 @@ export function AuthProvider({ children }) {
       password,
     });
 
-    console.log("LOGIN DATA:", data);
-    console.log("LOGIN ERROR:", error);
-
     if (error) throw error;
+    // onAuthStateChange fires automatically → handleSession is called → user is set
   };
 
   const logout = async () => {
     await supabase.auth.signOut();
-    setUser(null);
+    // onAuthStateChange fires with null session → setUser(null)
   };
 
   return (

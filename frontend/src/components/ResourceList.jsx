@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../supabaseClient";
+import { useAuth } from "../context/AuthContext"; // adjust path if needed
 
 // ===============================
 // Constants
@@ -39,7 +40,6 @@ const getResourceTypeDisplay = (type) => {
   const config = RESOURCE_TYPE_CONFIG[type];
   if (config) return config;
 
-  // Fallback for unknown types
   return {
     className: "chip-notes",
     label: type?.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) || "Unknown",
@@ -75,9 +75,13 @@ const fetchSignedUrl = async (resourceId) => {
 // ===============================
 // Main Component
 // ===============================
-function ResourceList({ resources }) {
+function ResourceList({ resources, onEdit, onDelete }) {
+  throw new Error("RESOURCE LIST IS RENDERING");
   const [activeResourceId, setActiveResourceId] = useState(null);
   const [error, setError] = useState(null);
+  const { user } = useAuth(); // ← access current user
+  
+  console.log("FRONTEND USER:", user);
 
   const handleViewResource = async (resource) => {
     setActiveResourceId(resource.id);
@@ -113,7 +117,6 @@ function ResourceList({ resources }) {
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  // Empty state
   if (!Array.isArray(resources) || resources.length === 0) {
     return <EmptyState />;
   }
@@ -128,6 +131,9 @@ function ResourceList({ resources }) {
           resource={resource}
           isActive={activeResourceId === resource.id}
           onView={handleViewResource}
+          onEdit={onEdit}      // ← pass down; parent provides handler
+          onDelete={onDelete}  // ← pass down; parent provides handler
+          user={user}          // ← pass down for ownership check
         />
       ))}
     </div>
@@ -137,8 +143,17 @@ function ResourceList({ resources }) {
 // ===============================
 // ResourceCard Component
 // ===============================
-function ResourceCard({ resource, isActive, onView }) {
+function ResourceCard({ resource, isActive, onView, onEdit, onDelete, user }) {
+  console.log("RESOURCE:", resource);
+  console.log("USER:", user);
+  console.log("RESOURCE CONTRIBUTOR:", resource.contributor_id);
   const resourceType = getResourceTypeDisplay(resource.resource_type);
+
+  // Safety check: only evaluate if user exists
+  const isOwner = user?.id === resource.contributor_id;
+  // ✅ Correct — role comes from backend /me
+const isAdmin = user?.role === "admin";
+  const canModify = isOwner || isAdmin;
 
   return (
     <article className={`resource-card ${isActive ? "selected" : ""}`}>
@@ -162,6 +177,25 @@ function ResourceCard({ resource, isActive, onView }) {
       >
         View Resource
       </button>
+
+      {canModify && (
+        <>
+          <button
+            className="resource-action"
+            onClick={() => onEdit?.(resource)}
+            aria-label={`Edit ${resource.title}`}
+          >
+            Edit
+          </button>
+          <button
+            className="resource-action"
+            onClick={() => onDelete?.(resource)}
+            aria-label={`Delete ${resource.title}`}
+          >
+            Delete
+          </button>
+        </>
+      )}
     </article>
   );
 }

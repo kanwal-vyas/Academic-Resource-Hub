@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import FacultyDirectory from "./pages/FacultyDirectory";
 import FacultyProfile from "./pages/FacultyProfile";
+import MyResources from "./pages/MyResources";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
 
@@ -81,6 +82,15 @@ function App({ onToggleTheme, isDark }) {
                 </ProtectedRoute>
               }
             />
+
+            <Route
+  path="/my-resources"
+  element={
+    <ProtectedRoute>
+      <MyResources />
+    </ProtectedRoute>
+  }
+/>
 
             <Route
               path="/faculty"

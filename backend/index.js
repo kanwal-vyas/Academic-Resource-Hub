@@ -1,9 +1,12 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express from 'express';
 import Busboy from 'busboy';
 import { createClient } from '@supabase/supabase-js';
 import pool from './db.js'
 import cors from "cors";
 import { authMiddleware } from './middleware/auth.js';
+import meRouter from "./routes/me.js";
 import facultyRoutes from './routes/facultyRoutes.js';
 const app = express();
 
@@ -130,6 +133,8 @@ app.use(cors({
   credentials: true
 }));
 
+app.use("/", meRouter); // → GET /me
+
 app.use('/api/faculty', facultyRoutes);
 
 /**
@@ -137,7 +142,6 @@ app.use('/api/faculty', facultyRoutes);
  * Fetch all non-deleted resources with joined data
  */
 app.get('/resources', authMiddleware, async (req, res) => {
-  console.log("REQ.USER:", req.user);
   try {
     const query = `
       SELECT 
@@ -146,10 +150,12 @@ app.get('/resources', authMiddleware, async (req, res) => {
         r.description,
         r.resource_type,
         r.content_type,
+        r.contributor_id,
         r.external_url,
         r.created_at,
         s.code AS subject_code,
         s.name AS subject_name,
+        c.name AS course_name,
         ay.start_year,
         ay.end_year,
         u.unit_number,
@@ -158,6 +164,7 @@ app.get('/resources', authMiddleware, async (req, res) => {
         faculty.full_name AS faculty_name
       FROM resources r
       JOIN subjects s ON r.subject_id = s.id
+      JOIN courses c ON s.course_id = c.id
       LEFT JOIN subject_offerings so ON r.subject_offering_id = so.id
       LEFT JOIN academic_years ay ON so.academic_year_id = ay.id
       LEFT JOIN units u ON r.unit_id = u.id
@@ -166,7 +173,7 @@ app.get('/resources', authMiddleware, async (req, res) => {
       WHERE r.is_deleted = false
       ORDER BY r.created_at DESC
     `;
-    
+
     const result = await pool.query(query);
 
     res.json({

@@ -76,9 +76,9 @@ function useResources(user) {
   }, [user]);
 
   const fetchResources = async () => {
-    console.log("TOKEN:", token);
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData?.session?.access_token;
+    console.log("TOKEN:", token);
 
     if (!token) {
       setError("Authentication required");
@@ -98,6 +98,11 @@ function useResources(user) {
       }
 
       const result = await response.json();
+      
+      console.log("FULL RESPONSE:", result);
+      console.log("RESOURCES ARRAY:", result.data);
+      console.log("UNIT NUMBERS:", result.data?.map(r => r.unit_number));
+
       setResources(result.data || []);
     } catch (err) {
       console.error("Error fetching resources:", err);
@@ -119,6 +124,8 @@ function Browse() {
 
   const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
+  const [selectedSubject, setSelectedSubject] = useState("");
+  const [selectedFaculty, setSelectedFaculty] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
 
@@ -130,27 +137,23 @@ function Browse() {
   ).sort();
 
   // Derive units for selected course
-  const unitsForCourse = selectedCourse
-    ? Array.from(
-        new Map(
-          resources
-            .filter((r) => r.course_name === selectedCourse)
-            .filter((r) => r.unit_number && r.unit_title)
-            .map((r) => [
-              r.unit_id,
-              {
-                unit_id: r.unit_id,
-                unit_number: r.unit_number,
-                unit_title: r.unit_title,
-              },
-            ])
-        ).values()
-      ).sort((a, b) => a.unit_number - b.unit_number)
-    : [];
+  const unitsForCourse = Array.from(
+  new Map(
+    resources
+      .filter((r) => r.unit_number)
+      .map((r) => [
+        r.unit_number,
+        {
+          unit_number: r.unit_number,
+          unit_title: r.unit_title,
+        },
+      ])
+  ).values()
+).sort((a, b) => a.unit_number - b.unit_number);
 
   // Derive unique academic years
   const academicYears = Array.from(
-    new Set(resources.map((r) => r.academic_year).filter(Boolean))
+    new Set(resources.map((r) => r.start_year).filter(Boolean))
   ).sort((a, b) => b - a);
 
   // Derive unique resource types
@@ -158,14 +161,36 @@ function Browse() {
     new Set(resources.map((r) => r.resource_type).filter(Boolean))
   );
 
+  // Derive unique subjects
+  const subjects = Array.from(
+    new Set(resources.map((r) => r.subject_name).filter(Boolean))
+  ).sort();
+
+  // Derive unique faculty
+  const faculties = Array.from(
+    new Set(resources.map((r) => r.faculty_name).filter(Boolean))
+  ).sort();
+
   // Filter resources
   const filteredResources = resources
-    .filter((r) => !selectedCourse || r.course_name === selectedCourse)
-    .filter((r) => !selectedUnit || r.unit_id === selectedUnit)
+    .filter(
+  (r) =>
+    selectedCourse === "" ||
+    r.course_name?.toLowerCase().trim() === selectedCourse.toLowerCase().trim()
+)
+    .filter(
+  (r) =>
+    selectedUnit === "" ||
+    String(r.unit_number) === String(selectedUnit)
+)
+    .filter((r) => !selectedSubject || r.subject_name === selectedSubject)
+    .filter((r) => !selectedFaculty || r.faculty_name === selectedFaculty)
     .filter((r) => typeFilter === "all" || r.resource_type === typeFilter)
     .filter(
-      (r) => yearFilter === "all" || r.academic_year === Number(yearFilter)
-    );
+  (r) =>
+    yearFilter === "all" ||
+    String(r.start_year) === String(yearFilter)
+)
 
   const handleViewResource = async (resource) => {
     setSelectedResourceId(resource.id);
@@ -211,12 +236,16 @@ function Browse() {
   const handleCourseChange = (course) => {
     setSelectedCourse(course);
     setSelectedUnit("");
+    setSelectedSubject("");
+    setSelectedFaculty("");
     setTypeFilter("all");
     setYearFilter("all");
   };
 
   const handleUnitChange = (unit) => {
     setSelectedUnit(unit);
+    setSelectedSubject("");
+    setSelectedFaculty("");
     setTypeFilter("all");
     setYearFilter("all");
   };
@@ -263,8 +292,40 @@ function Browse() {
                 >
                   <option value="">All Units</option>
                   {unitsForCourse.map((unit) => (
-                    <option key={unit.unit_id} value={unit.unit_id}>
+                    <option key={unit.unit_number} value={unit.unit_number}>
                       Unit {unit.unit_number}: {unit.unit_title}
+                    </option>
+                  ))}
+                </select>
+              </FilterGroup>
+
+              {/* Subject Filter */}
+              <FilterGroup label="Subject">
+                <select
+                  className="filter-select"
+                  value={selectedSubject}
+                  onChange={(e) => setSelectedSubject(e.target.value)}
+                >
+                  <option value="">All Subjects</option>
+                  {subjects.map((subject) => (
+                    <option key={subject} value={subject}>
+                      {subject}
+                    </option>
+                  ))}
+                </select>
+              </FilterGroup>
+
+              {/* Faculty Filter */}
+              <FilterGroup label="Faculty">
+                <select
+                  className="filter-select"
+                  value={selectedFaculty}
+                  onChange={(e) => setSelectedFaculty(e.target.value)}
+                >
+                  <option value="">All Faculty</option>
+                  {faculties.map((faculty) => (
+                    <option key={faculty} value={faculty}>
+                      {faculty}
                     </option>
                   ))}
                 </select>
@@ -312,12 +373,18 @@ function Browse() {
               {filteredResources.length}{" "}
               {filteredResources.length === 1 ? "Resource" : "Resources"} Found
             </h2>
-            {(selectedCourse || typeFilter !== "all" || yearFilter !== "all") && (
+            {(selectedCourse ||
+              selectedSubject ||
+              selectedFaculty ||
+              typeFilter !== "all" ||
+              yearFilter !== "all") && (
               <button
                 className="clear-filters-button"
                 onClick={() => {
                   setSelectedCourse("");
                   setSelectedUnit("");
+                  setSelectedSubject("");
+                  setSelectedFaculty("");
                   setTypeFilter("all");
                   setYearFilter("all");
                 }}
@@ -336,14 +403,23 @@ function Browse() {
 
           {!loading && !error && filteredResources.length > 0 && (
             <div className="resource-grid">
-              {filteredResources.map((resource) => (
-                <ResourceCard
-                  key={resource.id}
-                  resource={resource}
-                  isSelected={selectedResourceId === resource.id}
-                  onView={handleViewResource}
-                />
-              ))}
+              {filteredResources.map((resource) => {
+                console.log("RESOURCE:", resource);
+
+                const isOwner = user?.id === resource.contributor_id;
+                const isAdmin = user?.role === "admin";
+                const canModify = isOwner || isAdmin;
+
+                return (
+                  <ResourceCard
+                    key={resource.id}
+                    resource={resource}
+                    isSelected={selectedResourceId === resource.id}
+                    onView={handleViewResource}
+                    canModify={canModify}
+                  />
+                );
+              })}
             </div>
           )}
         </section>
@@ -367,7 +443,7 @@ function FilterGroup({ label, children }) {
 // ===============================
 // Resource Card
 // ===============================
-function ResourceCard({ resource, isSelected, onView }) {
+function ResourceCard({ resource, isSelected, onView, canModify, onEdit, onDelete }) {
   const resourceType = getResourceTypeDisplay(resource.resource_type);
   const contributorTypeFormatted = formatContributorType(resource.contributor_type);
   const badgeClass = typeClassMap[resource.resource_type] || "";
@@ -395,7 +471,7 @@ function ResourceCard({ resource, isSelected, onView }) {
           <span className={`resource-badge ${contentTypeClass}`}>
             {contentTypeLabel}
           </span>
-          <span className="chip chip-year">{resource.academic_year}</span>
+          <span className="chip chip-year">{resource.start_year}</span>
         </div>
       </header>
 
@@ -430,6 +506,25 @@ function ResourceCard({ resource, isSelected, onView }) {
       >
         {isSelected ? "Opened ✓" : "View Resource"}
       </button>
+
+      {canModify && (
+  <div className="resource-owner-actions">
+    <button
+      className="resource-action-edit"
+      onClick={onEdit}
+      aria-label={`Edit ${resource.title}`}
+    >
+      Edit
+    </button>
+    <button
+      className="resource-action-delete"
+      onClick={onDelete}
+      aria-label={`Delete ${resource.title}`}
+    >
+      Delete
+    </button>
+  </div>
+      )}
     </article>
   );
 }
@@ -468,4 +563,5 @@ function EmptyState({ hasFilters }) {
   );
 }
 
+export { useResources, ResourceCard, LoadingState, ErrorState, EmptyState };
 export default Browse;

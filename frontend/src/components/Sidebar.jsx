@@ -27,7 +27,7 @@ function Sidebar({ isOpen, toggleSidebar }) {
             }
             onClick={toggleSidebar}
           >
-            Browse
+            Browse Resources
           </NavLink>
 
           <NavLink
@@ -39,6 +39,16 @@ function Sidebar({ isOpen, toggleSidebar }) {
           >
             Upload Resource
           </NavLink>
+
+          <NavLink
+  to="/my-resources"
+  className={({ isActive }) =>
+    `sidebar-link ${isActive ? "sidebar-link--active" : ""}`
+  }
+  onClick={toggleSidebar}
+>
+  My Resources
+</NavLink>
 
           <NavLink
             to="/faculty"
