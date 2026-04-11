@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import "../styles/upload.css";
 
@@ -39,6 +39,10 @@ async function fetchUnits(subjectId, academicYearId, token) {
   return apiFetch(`/units?subject_id=${subjectId}&academic_year_id=${academicYearId}`, token);
 }
 
+async function fetchResourceById(id, token) {
+  return apiFetch(`/resources/${id}`, token);
+}
+
 async function submitLinkResource(payload, token) {
   const response = await fetch(`${API_BASE_URL}/resources`, {
     method: "POST",
@@ -50,8 +54,23 @@ async function submitLinkResource(payload, token) {
   });
   if (!response.ok) {
     const errorData = await response.json();
-    console.log("BACKEND ERROR:", errorData);  // ✅ ADD THIS
+    console.log("BACKEND ERROR:", errorData);
     throw new Error(errorData.error || "Upload failed");
+  }
+}
+
+async function updateLinkResource(id, payload, token) {
+  const response = await fetch(`${API_BASE_URL}/resources/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Update failed");
   }
 }
 
@@ -67,9 +86,21 @@ async function submitFileResource(formData, token) {
   }
 }
 
+async function updateFileResource(id, formData, token) {
+  const response = await fetch(`${API_BASE_URL}/resources/file/${id}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Update failed");
+  }
+}
+
 // ─── Validation ───────────────────────────────────────────────────────────────
 
-function validateForm({ title, course, subject, academicYear, resourceType, visibility, contentType, externalLink, file }) {
+function validateForm({ title, course, subject, academicYear, resourceType, visibility, contentType, externalLink, file, isEditMode }) {
   if (!title.trim())     return "Title is required";
   if (!course)           return "Please select a course";
   if (!subject)          return "Please select a subject";
@@ -77,7 +108,8 @@ function validateForm({ title, course, subject, academicYear, resourceType, visi
   if (!resourceType)     return "Please select a resource type";
   if (!visibility)       return "Please select visibility";
   if (contentType === "link" && !externalLink.trim()) return "External link is required";
-  if (contentType === "file" && !file)               return "Please select a PDF file";
+  // In edit mode, file is optional (keep existing file if none selected)
+  if (contentType === "file" && !file && !isEditMode) return "Please select a PDF file";
   return null;
 }
 
@@ -85,10 +117,13 @@ function validateForm({ title, course, subject, academicYear, resourceType, visi
 
 function UploadResource() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditMode = Boolean(id);
 
   // Form meta
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]           = useState("");
+  const [loadingResource, setLoadingResource] = useState(isEditMode);
 
   // Resource info
   const [title, setTitle]               = useState("");
@@ -109,8 +144,8 @@ function UploadResource() {
   const [units, setUnits]                 = useState([]);
 
   // Content
-  const [contentType, setContentType] = useState("file");
-  const [file, setFile]               = useState(null);
+  const [contentType, setContentType]   = useState("file");
+  const [file, setFile]                 = useState(null);
   const [externalLink, setExternalLink] = useState("");
 
   // ─── Derived ───────────────────────────────────────────────────────────────
@@ -123,7 +158,7 @@ function UploadResource() {
 
   // ─── Effects ───────────────────────────────────────────────────────────────
 
-  // Initial load
+  // Initial load: courses + academic years
   useEffect(() => {
     async function loadInitial() {
       try {
@@ -141,8 +176,70 @@ function UploadResource() {
     loadInitial();
   }, []);
 
-  // Subjects depend on course
+  // Prefill form when editing — runs after courses/years are loaded
   useEffect(() => {
+    if (!isEditMode) return;
+    if (courses.length === 0 || academicYears.length === 0) return;
+
+    async function loadResource() {
+      try {
+        const token = await getAuthToken();
+        const resource = await fetchResourceById(id, token);
+
+        setTitle(resource.title || "");
+        setDescription(resource.description || "");
+        setResourceType(resource.resource_type || "");
+        setVisibility(resource.visibility || "");
+
+        // content type
+        if (resource.content_type === "external_link") {
+          setContentType("link");
+          setExternalLink(resource.external_url || "");
+        } else {
+          setContentType("file");
+        }
+
+        // Match academic year by start_year + end_year
+        const matchedYear = academicYears.find(
+          (y) =>
+            String(y.start_year) === String(resource.start_year) &&
+            String(y.end_year)   === String(resource.end_year)
+        );
+        if (matchedYear) setAcademicYear(String(matchedYear.id));
+
+        // Load subjects for the matched course, then set subject + unit
+        if (resource.course_id) {
+          setCourse(String(resource.course_id));
+          const subjectData = await fetchSubjects(resource.course_id, token);
+          setSubjects(subjectData);
+
+          const matchedSubject = subjectData.find(
+            (s) => s.code === resource.subject_code
+          );
+          if (matchedSubject) {
+            setSubject(String(matchedSubject.id));
+
+            if (matchedYear && resource.unit_number) {
+              const unitData = await fetchUnits(matchedSubject.id, matchedYear.id, token);
+              setUnits(unitData);
+              setUnit(String(resource.unit_number));
+            }
+          }
+        }
+      } catch (err) {
+        setError("Failed to load resource for editing");
+      } finally {
+        setLoadingResource(false);
+      }
+    }
+
+    loadResource();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode, id, courses.length, academicYears.length]);
+
+  // Subjects depend on course (upload mode only — edit mode handles its own load)
+  useEffect(() => {
+    if (isEditMode) return;
     if (!course) {
       setSubjects([]);
       setSubject("");
@@ -161,7 +258,7 @@ function UploadResource() {
       }
     }
     loadSubjects();
-  }, [course]);
+  }, [course, isEditMode]);
 
   // Units depend on subject + academic year
   useEffect(() => {
@@ -175,18 +272,21 @@ function UploadResource() {
         const token = await getAuthToken();
         const data = await fetchUnits(subject, academicYear, token);
         setUnits(data);
-        setUnit("");
+        if (!isEditMode) setUnit("");
       } catch (err) {
         setError("Failed to load units");
       }
     }
     loadUnits();
-  }, [subject, academicYear]);
+  }, [subject, academicYear, isEditMode]);
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
 
   function handleCourseChange(e) {
     setCourse(e.target.value);
+    setSubjects([]);
+    setSubject("");
+    setUnit("");
     setError("");
   }
 
@@ -208,17 +308,14 @@ function UploadResource() {
     setExternalLink("");
   }
 
-  // ✅ FIX: e is optional — handler works via both onClick and onSubmit
   async function handleSubmit(e) {
-    console.log("SUBMIT TRIGGERED");
     e?.preventDefault();
     setError("");
 
     const validationError = validateForm({
       title, course, subject, academicYear, resourceType,
-      visibility, contentType, externalLink, file,
+      visibility, contentType, externalLink, file, isEditMode,
     });
-    console.log("VALIDATION RESULT:", validationError);
     if (validationError) {
       setError(validationError);
       return;
@@ -245,11 +342,14 @@ function UploadResource() {
           resource_type: resourceType,
           visibility,
         };
-        console.log("PAYLOAD SENT:", payload);
-        await submitLinkResource(payload, token);
+        if (isEditMode) {
+          await updateLinkResource(id, payload, token);
+        } else {
+          await submitLinkResource(payload, token);
+        }
       } else {
         const formData = new FormData();
-        formData.append("file", file);
+        if (file) formData.append("file", file);
         formData.append("title", title.trim());
         formData.append("description", description.trim());
         formData.append("subject_code", subject_code);
@@ -259,12 +359,16 @@ function UploadResource() {
         formData.append("visibility", visibility);
         if (unit_number) formData.append("unit_number", unit_number);
 
-        await submitFileResource(formData, token);
+        if (isEditMode) {
+          await updateFileResource(id, formData, token);
+        } else {
+          await submitFileResource(formData, token);
+        }
       }
 
-      navigate("/browse");
+      navigate(isEditMode ? "/my-resources" : "/browse");
     } catch (err) {
-      setError(err.message || "Upload failed. Please try again.");
+      setError(err.message || (isEditMode ? "Update failed. Please try again." : "Upload failed. Please try again."));
     } finally {
       setSubmitting(false);
     }
@@ -272,12 +376,28 @@ function UploadResource() {
 
   // ─── JSX ───────────────────────────────────────────────────────────────────
 
+  if (loadingResource) {
+    return (
+      <div className="upload-page">
+        <div className="upload-card">
+          <p style={{ padding: "2rem", textAlign: "center" }}>Loading resource…</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="upload-page">
       <div className="upload-card">
         <header className="page-header-upload">
-          <h1 className="page-title">Upload Resource</h1>
-          <p className="page-subtitle">Contribute to the institutional knowledge repository</p>
+          <h1 className="page-title">
+            {isEditMode ? "Edit Resource" : "Upload Resource"}
+          </h1>
+          <p className="page-subtitle">
+            {isEditMode
+              ? "Update the details of your resource"
+              : "Contribute to the institutional knowledge repository"}
+          </p>
         </header>
 
         <form className="upload-form" onSubmit={handleSubmit}>
@@ -443,7 +563,9 @@ function UploadResource() {
 
             {contentType === "file" && (
               <div className="form-group">
-                <label className="form-label" htmlFor="file-upload">Upload PDF File *</label>
+                <label className="form-label" htmlFor="file-upload">
+                  {isEditMode ? "Replace PDF File (optional)" : "Upload PDF File *"}
+                </label>
                 <input
                   id="file-upload"
                   type="file"
@@ -453,6 +575,9 @@ function UploadResource() {
                   disabled={submitting}
                 />
                 {file && <p className="file-hint">Selected: {file.name}</p>}
+                {isEditMode && !file && (
+                  <p className="file-hint">No file selected — existing file will be kept.</p>
+                )}
               </div>
             )}
 
@@ -502,7 +627,6 @@ function UploadResource() {
           )}
 
           <div className="form-actions">
-            {/* ✅ FIX: type="button" + onClick bypasses native form submit entirely */}
             <button
               className="button-primary"
               type="button"
@@ -510,15 +634,15 @@ function UploadResource() {
               disabled={submitting}
             >
               {submitting ? (
-                <><span className="spinner" /><span>Uploading...</span></>
+                <><span className="spinner" /><span>{isEditMode ? "Updating…" : "Uploading…"}</span></>
               ) : (
-                "Upload Resource"
+                isEditMode ? "Update Resource" : "Upload Resource"
               )}
             </button>
             <button
               className="button-secondary"
               type="button"
-              onClick={() => navigate("/")}
+              onClick={() => navigate(isEditMode ? "/my-resources" : "/")}
               disabled={submitting}
             >
               Cancel

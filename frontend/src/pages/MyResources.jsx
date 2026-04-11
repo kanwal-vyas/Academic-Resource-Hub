@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../auth/AuthContext";
 import {
@@ -14,6 +15,7 @@ const API_BASE_URL = "http://localhost:5000";
 
 function MyResources() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { resources, loading, error, refetch } = useResources(user);
   const [selectedResourceId, setSelectedResourceId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
@@ -49,7 +51,7 @@ function MyResources() {
 
   const handleEdit = (resource) => {
     // Wire to your edit flow when ready
-    alert(`Edit: ${resource.title}`);
+    navigate(`/edit-resource/${resource.id}`);
   };
 
   const handleDelete = async (resource) => {

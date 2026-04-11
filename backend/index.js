@@ -155,6 +155,7 @@ app.get('/resources', authMiddleware, async (req, res) => {
         r.created_at,
         s.code AS subject_code,
         s.name AS subject_name,
+        s.course_id,
         c.name AS course_name,
         ay.start_year,
         ay.end_year,
@@ -234,6 +235,71 @@ app.get('/resources/latest', authMiddleware, async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch latest resources'
+    });
+  }
+});
+
+/**
+ * GET /resources/:id
+ * Fetch a single resource by ID with all joined data needed for edit prefill
+ */
+app.get('/resources/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const query = `
+      SELECT 
+        r.id,
+        r.title,
+        r.description,
+        r.resource_type,
+        r.content_type,
+        r.contributor_id,
+        r.external_url,
+        r.storage_path,
+        r.created_at,
+        r.subject_offering_id,
+        s.id AS subject_id,
+        s.code AS subject_code,
+        s.name AS subject_name,
+        s.course_id,
+        c.name AS course_name,
+        ay.start_year,
+        ay.end_year,
+        u.unit_number,
+        usr.role AS contributor_type,
+        usr.is_verified AS contributor_is_verified,
+        faculty.full_name AS faculty_name,
+        'public' AS visibility
+      FROM resources r
+      JOIN subjects s ON r.subject_id = s.id
+      JOIN courses c ON s.course_id = c.id
+      LEFT JOIN subject_offerings so ON r.subject_offering_id = so.id
+      LEFT JOIN academic_years ay ON so.academic_year_id = ay.id
+      LEFT JOIN units u ON r.unit_id = u.id
+      JOIN users usr ON r.contributor_id = usr.id
+      LEFT JOIN users faculty ON so.faculty_id = faculty.id
+      WHERE r.id = $1 AND r.is_deleted = false
+    `;
+
+    const result = await pool.query(query, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Resource not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error fetching resource by id:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch resource'
     });
   }
 });
@@ -802,6 +868,127 @@ app.put('/resources/:id', authMiddleware, async (req, res) => {
       error: 'Failed to update resource'
     });
   }
+});
+
+/**
+ * PUT /resources/file/:id
+ * Update a file resource using Busboy
+ */
+app.put('/resources/file/:id', authMiddleware, (req, res) => {
+  const busboy = Busboy({ headers: req.headers });
+
+  const fields = {};
+  let fileData = null;
+  let filename = null;
+  let mimeType = null;
+
+  busboy.on('field', (fieldname, value) => {
+    fields[fieldname] = value;
+  });
+
+  busboy.on('file', (fieldname, file, info) => {
+    filename = info.filename;
+    mimeType = info.mimeType;
+    const chunks = [];
+    file.on('data', (chunk) => chunks.push(chunk));
+    file.on('end', () => { fileData = Buffer.concat(chunks); });
+  });
+
+  busboy.on('finish', async () => {
+    const client = await pool.connect();
+    try {
+      const { id } = req.params;
+      const { title, description, subject_code, start_year, end_year, unit_number, resource_type } = fields;
+
+      // Check permissions
+      const userIsAdmin = await isAdmin(req.user.id);
+      const userIsOwner = await isResourceOwner(id, req.user.id);
+      if (!userIsAdmin && !userIsOwner) {
+        return res.status(403).json({ success: false, error: 'Permission denied' });
+      }
+
+      await client.query('BEGIN');
+
+      // Resolve classification
+      const subject = await resolveSubject(subject_code);
+      const academicYearId = await resolveAcademicYear(parseInt(start_year), parseInt(end_year));
+      const offering = await resolveSubjectOffering(subject.id, academicYearId);
+      let unitId = null;
+      if (unit_number) {
+        unitId = await resolveUnit(offering.id, parseInt(unit_number));
+      }
+
+      let storagePath;
+
+      if (fileData && filename) {
+        // Get old storage path to delete
+        const existing = await client.query(
+          'SELECT storage_path FROM resources WHERE id = $1',
+          [id]
+        );
+        if (existing.rows[0]?.storage_path) {
+          await supabase.storage.from('resources').remove([existing.rows[0].storage_path]);
+        }
+
+        // Upload new file
+        storagePath = generateStoragePath(subject.id, offering.id, unitId, filename);
+        const { error: uploadError } = await supabase.storage
+          .from('resources')
+          .upload(storagePath, fileData, { contentType: mimeType, upsert: false });
+        if (uploadError) throw new Error(`File upload failed: ${uploadError.message}`);
+      }
+
+      // Build update
+      const updates = [
+        'title = $1',
+        'description = $2',
+        'subject_id = $3',
+        'subject_offering_id = $4',
+        'unit_id = $5',
+        'resource_type = $6',
+      ];
+      const values = [
+        title,
+        description,
+        subject.id,
+        offering.id,
+        unitId,
+        resource_type,
+      ];
+
+      if (storagePath) {
+        updates.push(`storage_path = $${values.length + 1}`);
+        values.push(storagePath);
+      }
+
+      values.push(id);
+      const result = await client.query(
+        `UPDATE resources SET ${updates.join(', ')} WHERE id = $${values.length} RETURNING *`,
+        values
+      );
+
+      if (result.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ success: false, error: 'Resource not found' });
+      }
+
+      await client.query('COMMIT');
+      res.json({ success: true, data: result.rows[0] });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('Error updating file resource:', error);
+      res.status(400).json({ success: false, error: error.message || 'Update failed' });
+    } finally {
+      client.release();
+    }
+  });
+
+  busboy.on('error', (error) => {
+    console.error('Busboy error:', error);
+    res.status(500).json({ success: false, error: 'File processing failed' });
+  });
+
+  req.pipe(busboy);
 });
 
 /**

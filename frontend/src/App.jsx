@@ -84,6 +84,15 @@ function App({ onToggleTheme, isDark }) {
             />
 
             <Route
+  path="/edit-resource/:id"
+  element={
+    <ProtectedRoute>
+      <UploadResource />
+    </ProtectedRoute>
+  }
+/>
+
+            <Route
   path="/my-resources"
   element={
     <ProtectedRoute>

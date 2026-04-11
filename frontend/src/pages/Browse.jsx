@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../auth/AuthContext";
 import "../styles/browse.css";
@@ -98,10 +99,10 @@ function useResources(user) {
       }
 
       const result = await response.json();
-      
+
       console.log("FULL RESPONSE:", result);
       console.log("RESOURCES ARRAY:", result.data);
-      console.log("UNIT NUMBERS:", result.data?.map(r => r.unit_number));
+      console.log("UNIT NUMBERS:", result.data?.map((r) => r.unit_number));
 
       setResources(result.data || []);
     } catch (err) {
@@ -120,30 +121,58 @@ function useResources(user) {
 // ===============================
 function Browse() {
   const { user } = useAuth();
+  const navigate = useNavigate(); // ✅ moved inside component
   const { resources, loading, error, refetch } = useResources(user);
 
-  const handleDelete = async (resourceId) => {
-  const confirmDelete = window.confirm("Are you sure you want to delete this resource?");
-  if (!confirmDelete) return;
+  // ✅ Fetch DB role from /me so isAdmin is accurate
+  const [dbRole, setDbRole] = useState(null);
 
-  try {
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-
-    const response = await fetch(`${API_BASE_URL}/resources/${resourceId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (response.ok) {
-      await refetch();
-    } else {
-      console.error("Delete failed");
+  useEffect(() => {
+    async function fetchMe() {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+        if (!token) return;
+        const res = await fetch(`${API_BASE_URL}/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const me = await res.json();
+          setDbRole(me.role);
+        }
+      } catch (err) {
+        console.error("Failed to fetch /me:", err);
+      }
     }
-  } catch (err) {
-    console.error("Delete failed", err);
-  }
-};
+    if (user) fetchMe();
+  }, [user]);
+
+  const isAdmin = dbRole === "admin";
+
+  const handleDelete = async (resourceId) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this resource?"
+    );
+    if (!confirmDelete) return;
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+
+      const response = await fetch(`${API_BASE_URL}/resources/${resourceId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        await refetch();
+      } else {
+        console.error("Delete failed");
+      }
+    } catch (err) {
+      console.error("Delete failed", err);
+    }
+  };
 
   const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
@@ -161,18 +190,18 @@ function Browse() {
 
   // Derive units for selected course
   const unitsForCourse = Array.from(
-  new Map(
-    resources
-      .filter((r) => r.unit_number)
-      .map((r) => [
-        r.unit_number,
-        {
-          unit_number: r.unit_number,
-          unit_title: r.unit_title,
-        },
-      ])
-  ).values()
-).sort((a, b) => a.unit_number - b.unit_number);
+    new Map(
+      resources
+        .filter((r) => r.unit_number)
+        .map((r) => [
+          r.unit_number,
+          {
+            unit_number: r.unit_number,
+            unit_title: r.unit_title,
+          },
+        ])
+    ).values()
+  ).sort((a, b) => a.unit_number - b.unit_number);
 
   // Derive unique academic years
   const academicYears = Array.from(
@@ -197,23 +226,22 @@ function Browse() {
   // Filter resources
   const filteredResources = resources
     .filter(
-  (r) =>
-    selectedCourse === "" ||
-    r.course_name?.toLowerCase().trim() === selectedCourse.toLowerCase().trim()
-)
+      (r) =>
+        selectedCourse === "" ||
+        r.course_name?.toLowerCase().trim() ===
+          selectedCourse.toLowerCase().trim()
+    )
     .filter(
-  (r) =>
-    selectedUnit === "" ||
-    String(r.unit_number) === String(selectedUnit)
-)
+      (r) =>
+        selectedUnit === "" || String(r.unit_number) === String(selectedUnit)
+    )
     .filter((r) => !selectedSubject || r.subject_name === selectedSubject)
     .filter((r) => !selectedFaculty || r.faculty_name === selectedFaculty)
     .filter((r) => typeFilter === "all" || r.resource_type === typeFilter)
     .filter(
-  (r) =>
-    yearFilter === "all" ||
-    String(r.start_year) === String(yearFilter)
-)
+      (r) =>
+        yearFilter === "all" || String(r.start_year) === String(yearFilter)
+    );
 
   const handleViewResource = async (resource) => {
     setSelectedResourceId(resource.id);
@@ -429,19 +457,17 @@ function Browse() {
               {filteredResources.map((resource) => {
                 console.log("RESOURCE:", resource);
 
-                const isAdmin = user?.role === "admin";
-
-return (
-  <ResourceCard
-    key={resource.id}
-    resource={resource}
-    isSelected={selectedResourceId === resource.id}
-    onView={handleViewResource}
-    canModify={isAdmin}
-    onEdit={() => alert(`Edit: ${resource.title}`)}
-    onDelete={() => handleDelete(resource.id)}
-  />
-);
+                return (
+                  <ResourceCard
+                    key={resource.id}
+                    resource={resource}
+                    isSelected={selectedResourceId === resource.id}
+                    onView={handleViewResource}
+                    canModify={isAdmin}
+                    onEdit={() => navigate(`/edit-resource/${resource.id}`)}
+                    onDelete={() => handleDelete(resource.id)}
+                  />
+                );
               })}
             </div>
           )}
@@ -466,16 +492,25 @@ function FilterGroup({ label, children }) {
 // ===============================
 // Resource Card
 // ===============================
-function ResourceCard({ resource, isSelected, onView, canModify, onEdit, onDelete }) {
+function ResourceCard({
+  resource,
+  isSelected,
+  onView,
+  canModify,
+  onEdit,
+  onDelete,
+}) {
   const resourceType = getResourceTypeDisplay(resource.resource_type);
-  const contributorTypeFormatted = formatContributorType(resource.contributor_type);
+  const contributorTypeFormatted = formatContributorType(
+    resource.contributor_type
+  );
   const badgeClass = typeClassMap[resource.resource_type] || "";
-  const contentTypeClass = resource.content_type === "external_link"
-    ? "resource-badge--link"
-    : "resource-badge--file";
-  const contentTypeLabel = resource.content_type === "external_link"
-    ? "External Link"
-    : "File";
+  const contentTypeClass =
+    resource.content_type === "external_link"
+      ? "resource-badge--link"
+      : "resource-badge--file";
+  const contentTypeLabel =
+    resource.content_type === "external_link" ? "External Link" : "File";
 
   return (
     <article className={`card resource-card ${isSelected ? "selected" : ""}`}>
@@ -506,7 +541,9 @@ function ResourceCard({ resource, isSelected, onView, canModify, onEdit, onDelet
         <div className="meta-left">
           <span className="meta-item">📘 {resource.subject_name}</span>
           {resource.faculty_name && (
-            <span className="meta-item">🎓 Taught by {resource.faculty_name}</span>
+            <span className="meta-item">
+              🎓 Taught by {resource.faculty_name}
+            </span>
           )}
           {resource.unit_number && (
             <span className="meta-item">📑 Unit {resource.unit_number}</span>
@@ -515,9 +552,13 @@ function ResourceCard({ resource, isSelected, onView, canModify, onEdit, onDelet
         <div className="meta-right">
           <span className="meta-item">{contributorTypeFormatted}</span>
           {resource.contributor_is_verified ? (
-            <span className="verified-badge" title="Verified Contributor">✔ Verified</span>
+            <span className="verified-badge" title="Verified Contributor">
+              ✔ Verified
+            </span>
           ) : (
-            <span className="unverified-badge" title="Unverified Contributor">Unverified</span>
+            <span className="unverified-badge" title="Unverified Contributor">
+              Unverified
+            </span>
           )}
         </div>
       </footer>
@@ -531,22 +572,22 @@ function ResourceCard({ resource, isSelected, onView, canModify, onEdit, onDelet
       </button>
 
       {canModify && (
-  <div className="resource-owner-actions">
-    <button
-      className="resource-action-edit"
-      onClick={onEdit}
-      aria-label={`Edit ${resource.title}`}
-    >
-      Edit
-    </button>
-    <button
-      className="resource-action-delete"
-      onClick={onDelete}
-      aria-label={`Delete ${resource.title}`}
-    >
-      Delete
-    </button>
-  </div>
+        <div className="resource-owner-actions">
+          <button
+            className="resource-action-edit"
+            onClick={onEdit}
+            aria-label={`Edit ${resource.title}`}
+          >
+            Edit
+          </button>
+          <button
+            className="resource-action-delete"
+            onClick={onDelete}
+            aria-label={`Delete ${resource.title}`}
+          >
+            Delete
+          </button>
+        </div>
       )}
     </article>
   );
