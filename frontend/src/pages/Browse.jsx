@@ -120,7 +120,30 @@ function useResources(user) {
 // ===============================
 function Browse() {
   const { user } = useAuth();
-  const { resources, loading, error } = useResources(user);
+  const { resources, loading, error, refetch } = useResources(user);
+
+  const handleDelete = async (resourceId) => {
+  const confirmDelete = window.confirm("Are you sure you want to delete this resource?");
+  if (!confirmDelete) return;
+
+  try {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+
+    const response = await fetch(`${API_BASE_URL}/resources/${resourceId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (response.ok) {
+      await refetch();
+    } else {
+      console.error("Delete failed");
+    }
+  } catch (err) {
+    console.error("Delete failed", err);
+  }
+};
 
   const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
@@ -406,19 +429,19 @@ function Browse() {
               {filteredResources.map((resource) => {
                 console.log("RESOURCE:", resource);
 
-                const isOwner = user?.id === resource.contributor_id;
                 const isAdmin = user?.role === "admin";
-                const canModify = isOwner || isAdmin;
 
-                return (
-                  <ResourceCard
-                    key={resource.id}
-                    resource={resource}
-                    isSelected={selectedResourceId === resource.id}
-                    onView={handleViewResource}
-                    canModify={canModify}
-                  />
-                );
+return (
+  <ResourceCard
+    key={resource.id}
+    resource={resource}
+    isSelected={selectedResourceId === resource.id}
+    onView={handleViewResource}
+    canModify={isAdmin}
+    onEdit={() => alert(`Edit: ${resource.title}`)}
+    onDelete={() => handleDelete(resource.id)}
+  />
+);
               })}
             </div>
           )}
