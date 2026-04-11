@@ -1,7 +1,20 @@
-import { NavLink } from "react-router-dom";
+import { useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import "../styles/sidebar.css";
 
+const RESOURCES_PATHS = ["/browse", "/my-resources", "/upload"];
+
 function Sidebar({ isOpen, toggleSidebar }) {
+  const location = useLocation();
+
+  // Auto-expand if we're on any resources path
+  const isOnResourcesPath = RESOURCES_PATHS.includes(location.pathname);
+  const [resourcesOpen, setResourcesOpen] = useState(isOnResourcesPath);
+
+  const handleSubLinkClick = () => {
+    toggleSidebar();
+  };
+
   return (
     <>
       {isOpen && (
@@ -10,8 +23,11 @@ function Sidebar({ isOpen, toggleSidebar }) {
 
       <aside className={`sidebar ${isOpen ? "sidebar--open" : ""}`}>
         <nav className="sidebar-nav">
+
+          {/* Home */}
           <NavLink
             to="/"
+            end
             className={({ isActive }) =>
               `sidebar-link ${isActive ? "sidebar-link--active" : ""}`
             }
@@ -20,36 +36,53 @@ function Sidebar({ isOpen, toggleSidebar }) {
             Home
           </NavLink>
 
-          <NavLink
-            to="/browse"
-            className={({ isActive }) =>
-              `sidebar-link ${isActive ? "sidebar-link--active" : ""}`
-            }
-            onClick={toggleSidebar}
-          >
-            Browse Resources
-          </NavLink>
+          {/* Resources dropdown group */}
+          <div className="sidebar-group">
+            <button
+              className={`sidebar-group-header ${isOnResourcesPath ? "sidebar-group-header--active" : ""}`}
+              onClick={() => setResourcesOpen((prev) => !prev)}
+              aria-expanded={resourcesOpen}
+            >
+              <span>Resources</span>
+              <span className={`sidebar-chevron ${resourcesOpen ? "sidebar-chevron--open" : ""}`}>
+                ‹
+              </span>
+            </button>
 
-          <NavLink
-            to="/upload"
-            className={({ isActive }) =>
-              `sidebar-link ${isActive ? "sidebar-link--active" : ""}`
-            }
-            onClick={toggleSidebar}
-          >
-            Upload Resource
-          </NavLink>
+            <div className={`sidebar-dropdown ${resourcesOpen ? "sidebar-dropdown--open" : ""}`}>
+              <NavLink
+                to="/browse"
+                className={({ isActive }) =>
+                  `sidebar-link sidebar-sublink ${isActive ? "sidebar-link--active" : ""}`
+                }
+                onClick={handleSubLinkClick}
+              >
+                Browse Resources
+              </NavLink>
 
-          <NavLink
-  to="/my-resources"
-  className={({ isActive }) =>
-    `sidebar-link ${isActive ? "sidebar-link--active" : ""}`
-  }
-  onClick={toggleSidebar}
->
-  My Resources
-</NavLink>
+              <NavLink
+                to="/my-resources"
+                className={({ isActive }) =>
+                  `sidebar-link sidebar-sublink ${isActive ? "sidebar-link--active" : ""}`
+                }
+                onClick={handleSubLinkClick}
+              >
+                My Resources
+              </NavLink>
 
+              <NavLink
+                to="/upload"
+                className={({ isActive }) =>
+                  `sidebar-link sidebar-sublink ${isActive ? "sidebar-link--active" : ""}`
+                }
+                onClick={handleSubLinkClick}
+              >
+                Upload Resource
+              </NavLink>
+            </div>
+          </div>
+
+          {/* Faculty Directory */}
           <NavLink
             to="/faculty"
             className={({ isActive }) =>
@@ -59,6 +92,7 @@ function Sidebar({ isOpen, toggleSidebar }) {
           >
             Faculty Directory
           </NavLink>
+
         </nav>
       </aside>
     </>

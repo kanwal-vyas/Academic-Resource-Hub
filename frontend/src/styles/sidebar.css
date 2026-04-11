@@ -57,3 +57,87 @@
   color: var(--primary);
   font-weight: 600;
 }
+
+/* ── Resources dropdown group ── */
+.sidebar-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 0.9375rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-group-header:hover {
+  background-color: var(--surface-secondary);
+  color: var(--text);
+}
+
+.sidebar-group-header--active {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* Chevron arrow — rotates when open */
+.sidebar-chevron {
+  display: inline-block;
+  font-size: 1.1rem;
+  line-height: 1;
+  transform: rotate(-90deg);         /* points down by default */
+  transition: transform 0.22s ease;
+  color: var(--text-secondary);
+}
+
+.sidebar-chevron--open {
+  transform: rotate(90deg);          /* points up when expanded */
+}
+
+/* Dropdown container — smooth slide */
+.sidebar-dropdown {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.28s ease, opacity 0.2s ease;
+}
+
+.sidebar-dropdown--open {
+  max-height: 220px;
+  opacity: 1;
+}
+
+/* Indented sub-links */
+.sidebar-sublink {
+  padding-left: calc(var(--space-md) + 18px);
+  font-size: 0.875rem;
+  position: relative;
+}
+
+.sidebar-sublink::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--space-md) + 4px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 7px;
+  height: 7px;
+  border-left: 2px solid var(--border);
+  border-bottom: 2px solid var(--border);
+  border-radius: 0 0 0 2px;
+}
+
+.sidebar-sublink.sidebar-link--active::before {
+  border-color: var(--primary);
+}
