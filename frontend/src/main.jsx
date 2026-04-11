@@ -5,15 +5,27 @@ import App from "./App.jsx";
 import { AuthProvider } from "./auth/AuthContext";
 import "./App.css";
 
+// ✅ FIX 1: Apply class SYNCHRONOUSLY before React renders (prevents flash + ensures body class on all routes including login)
+const savedTheme = localStorage.getItem("theme");
+if (savedTheme === "dark") {
+  document.body.classList.add("dark");
+} else {
+  document.body.classList.remove("dark");
+}
+
 function Root() {
   const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem("theme");
-    return saved === "dark";
+    return localStorage.getItem("theme") === "dark";
   });
 
   useEffect(() => {
     localStorage.setItem("theme", isDark ? "dark" : "light");
-    document.body.classList.toggle("dark", isDark);
+    // ✅ FIX 2: Explicit add/remove instead of toggle
+    if (isDark) {
+      document.body.classList.add("dark");
+    } else {
+      document.body.classList.remove("dark");
+    }
   }, [isDark]);
 
   const toggleTheme = () => {

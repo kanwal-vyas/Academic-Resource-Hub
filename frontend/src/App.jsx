@@ -48,12 +48,12 @@ function App({ onToggleTheme, isDark }) {
             />
 
             <Route
-              path="/signup"
-              element={
-                user ? <Navigate to="/" replace /> :
-                <SignUp />
-              }
-            />
+  path="/signup"
+  element={
+    user ? <Navigate to="/" replace /> :
+    <SignUp isDark={isDark} onToggleTheme={onToggleTheme} />
+  }
+/>
 
             {/* Protected */}
             <Route
