@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import "../styles/auth.css";
 
@@ -136,11 +137,11 @@ function Login({ isDark, onToggleTheme }) {
           </form>
 
           <div className="auth-footer">
-            <a href="#" className="footer-link">Forgot password?</a>
+            <Link to="/forgot-password" className="footer-link">Forgot password?</Link>
             <span className="footer-divider">•</span>
-            <a href="/signup" className="footer-link">Create account</a>
+            <Link to="/signup" className="footer-link">Create account</Link>
             <span className="footer-divider">•</span>
-            <a href="#" className="footer-link">Contact administrator</a>
+            <Link to="/contact" className="footer-link">Contact administrator</Link>
           </div>
         </div>
       </div>

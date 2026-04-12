@@ -2,11 +2,11 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 import AdminLogin from './pages/AdminLogin';
 import Dashboard from './pages/Dashboard';
-import FacultyManagement from './pages/FacultyManagement';
 import ContentManagement from './pages/ContentManagement';
 import ResourceVerification from './pages/ResourceVerification';
 import UserManagement from './pages/UserManagement';
 import FacultyList from './pages/FacultyList';
+import Messages from './pages/Messages';
 
 function AdminRoute({ children }) {
   const { user, loading } = useAuth();
@@ -65,11 +65,11 @@ function App() {
         }
       />
 
-      <Route path="/faculty" element={<AdminRoute><FacultyManagement /></AdminRoute>} />
       <Route path="/faculty-list" element={<AdminRoute><FacultyList /></AdminRoute>} />
       <Route path="/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
       <Route path="/content" element={<AdminRoute><ContentManagement /></AdminRoute>} />
       <Route path="/resources" element={<AdminRoute><ResourceVerification /></AdminRoute>} />
+      <Route path="/messages" element={<AdminRoute><Messages /></AdminRoute>} />
 
       <Route
         path="*"

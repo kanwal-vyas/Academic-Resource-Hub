@@ -21,96 +21,14 @@ function adminOnly(req, res, next) {
   next();
 }
 
-// GET /api/admin/faculty/pending — list all pending faculty registrations
-router.get('/faculty/pending', authMiddleware, adminOnly, async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT
-        u.id, u.full_name, u.email, u.created_at,
-        fp.department, fp.employee_id, fp.education,
-        fp.research_interests, fp.status, fp.rejection_reason
-      FROM faculty_profiles fp
-      JOIN users u ON u.id = fp.user_id
-      WHERE fp.status = 'pending'
-      ORDER BY u.created_at DESC
-    `);
-    res.json(result.rows);
-  } catch (err) {
-    console.error('Error fetching pending faculty:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// GET /api/admin/faculty/all — list all faculty with statuses
-router.get('/faculty/all', authMiddleware, adminOnly, async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT
-        u.id, u.full_name, u.email, u.created_at, u.is_verified,
-        fp.department, fp.employee_id, fp.education,
-        fp.research_interests, fp.status, fp.rejection_reason,
-        fp.open_for_interns, fp.open_for_research, fp.open_for_mentoring,
-        fp.updated_at
-      FROM faculty_profiles fp
-      JOIN users u ON u.id = fp.user_id
-      ORDER BY fp.status ASC, u.created_at DESC
-    `);
-    res.json(result.rows);
-  } catch (err) {
-    console.error('Error fetching all faculty:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// PUT /api/admin/faculty/:id/approve — approve a faculty registration
-router.put('/faculty/:id/approve', authMiddleware, adminOnly, async (req, res) => {
-  const { id } = req.params;
-  try {
-    await pool.query(
-      `UPDATE faculty_profiles SET status = 'approved', rejection_reason = NULL WHERE user_id = $1`,
-      [id]
-    );
-    await pool.query(
-      `UPDATE users SET is_verified = true WHERE id = $1`,
-      [id]
-    );
-    res.json({ message: 'Faculty approved successfully' });
-  } catch (err) {
-    console.error('Error approving faculty:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// PUT /api/admin/faculty/:id/reject — reject a faculty registration
-router.put('/faculty/:id/reject', authMiddleware, adminOnly, async (req, res) => {
-  const { id } = req.params;
-  const { reason } = req.body;
-  try {
-    await pool.query(
-      `UPDATE faculty_profiles SET status = 'rejected', rejection_reason = $1 WHERE user_id = $2`,
-      [reason || 'Application rejected by administrator', id]
-    );
-    await pool.query(
-      `UPDATE users SET is_verified = false WHERE id = $1`,
-      [id]
-    );
-    res.json({ message: 'Faculty rejected' });
-  } catch (err) {
-    console.error('Error rejecting faculty:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 // GET /api/admin/stats — dashboard summary stats
 router.get('/stats', authMiddleware, adminOnly, async (req, res) => {
   try {
     const [
-      pendingRes, approvedRes, rejectedRes, studentsRes,
-      coursesRes, subjectsRes, totalResourcesRes, pendingResourcesRes
+      facultyRes, studentsRes, coursesRes, subjectsRes,
+      totalResourcesRes, pendingResourcesRes
     ] = await Promise.all([
-      pool.query(`SELECT COUNT(*) FROM faculty_profiles WHERE status = 'pending'`),
-      pool.query(`SELECT COUNT(*) FROM faculty_profiles WHERE status = 'approved'`),
-      pool.query(`SELECT COUNT(*) FROM faculty_profiles WHERE status = 'rejected'`),
+      pool.query(`SELECT COUNT(*) FROM users WHERE role = 'faculty'`),
       pool.query(`SELECT COUNT(*) FROM users WHERE role = 'student'`),
       pool.query(`SELECT COUNT(*) FROM courses`),
       pool.query(`SELECT COUNT(*) FROM subjects`),
@@ -119,9 +37,7 @@ router.get('/stats', authMiddleware, adminOnly, async (req, res) => {
     ]);
 
     res.json({
-      pending: parseInt(pendingRes.rows[0].count),
-      approved: parseInt(approvedRes.rows[0].count),
-      rejected: parseInt(rejectedRes.rows[0].count),
+      faculty: parseInt(facultyRes.rows[0].count),
       students: parseInt(studentsRes.rows[0].count),
       courses: parseInt(coursesRes.rows[0].count),
       subjects: parseInt(subjectsRes.rows[0].count),
@@ -598,6 +514,92 @@ router.get('/faculty/list', authMiddleware, adminOnly, async (req, res) => {
     res.json({ success: true, data: result.rows });
   } catch (err) {
     console.error('Error fetching faculty list:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/admin/faculty/:id — update a faculty profile (full edit)
+router.put('/faculty/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { id } = req.params; // this is the user_id
+  const {
+    department, employee_id, education, research_interests, phd_topic,
+    open_for_interns, open_for_research, open_for_mentoring,
+    internship_details, research_details, mentoring_details
+  } = req.body;
+
+  try {
+    const result = await pool.query(
+      `UPDATE faculty_profiles 
+       SET department = $1, employee_id = $2, education = $3, 
+           research_interests = $4, phd_topic = $5,
+           open_for_interns = $6, open_for_research = $7, open_for_mentoring = $8,
+           internship_details = $9, research_details = $10, mentoring_details = $11,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE user_id = $12
+       RETURNING *`,
+      [
+        department, employee_id, education, research_interests, phd_topic,
+        open_for_interns, open_for_research, open_for_mentoring,
+        internship_details, research_details, mentoring_details,
+        id
+      ]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Faculty profile not found' });
+    }
+
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    console.error('Error updating faculty profile:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ============================================================================
+// CONTACT MESSAGES
+// ============================================================================
+
+// GET /api/admin/messages — list all contact messages (newest first)
+router.get('/messages', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, name, email, subject, message, is_read, created_at
+      FROM contact_messages
+      ORDER BY created_at DESC
+    `);
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    console.error('Error fetching messages:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PATCH /api/admin/messages/:id/read — mark a message as read
+router.patch('/messages/:id/read', authMiddleware, adminOnly, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      `UPDATE contact_messages SET is_read = true WHERE id = $1 RETURNING id`,
+      [id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Message not found' });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error marking message as read:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/admin/messages/:id — delete a message
+router.delete('/messages/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(`DELETE FROM contact_messages WHERE id = $1 RETURNING id`, [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Message not found' });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting message:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

@@ -11,6 +11,41 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// POST /api/auth/check-email
+// Public endpoint to check if an email is registered
+router.post('/check-email', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email is required' });
+
+  try {
+    const result = await pool.query('SELECT 1 FROM users WHERE email = $1', [email]);
+    res.json({ exists: result.rows.length > 0 });
+  } catch (err) {
+    console.error('Check email error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/auth/contact
+// Public endpoint — anyone can submit a contact message (no auth required)
+router.post('/contact', async (req, res) => {
+  const { name, email, subject, message } = req.body;
+  if (!name || !email || !message) {
+    return res.status(400).json({ error: 'name, email, and message are required' });
+  }
+  try {
+    await pool.query(
+      `INSERT INTO contact_messages (id, name, email, subject, message)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4)`,
+      [name.trim(), email.trim().toLowerCase(), subject?.trim() || null, message.trim()]
+    );
+    res.status(201).json({ success: true, message: 'Message sent successfully' });
+  } catch (err) {
+    console.error('Contact form error:', err);
+    res.status(500).json({ error: 'Failed to send message. Please try again.' });
+  }
+});
+
 // POST /api/auth/faculty/register
 // Faculty self-registration — creates Supabase user + DB records, sets status = 'pending'
 router.post('/faculty/register', async (req, res) => {
@@ -50,16 +85,16 @@ router.post('/faculty/register', async (req, res) => {
       [userId, email, full_name]
     );
 
-    // 3. Insert into faculty_profiles with status = 'pending'
+    // 3. Insert into faculty_profiles with status = 'approved'
     await pool.query(
       `INSERT INTO faculty_profiles (user_id, department, employee_id, education, research_interests, status)
-       VALUES ($1, $2, $3, $4, $5, 'pending')
+       VALUES ($1, $2, $3, $4, $5, 'approved')
        ON CONFLICT (user_id) DO UPDATE
-         SET department = $2, employee_id = $3, education = $4, research_interests = $5, status = 'pending'`,
+         SET department = $2, employee_id = $3, education = $4, research_interests = $5, status = 'approved'`,
       [userId, department, employee_id, education || null, research_interests || null]
     );
 
-    res.status(201).json({ message: 'Registration submitted. Awaiting admin approval.', userId });
+    res.status(201).json({ message: 'Registration successful! You may now log in.', userId });
   } catch (err) {
     console.error('Faculty registration error:', err);
     res.status(500).json({ error: 'Registration failed. Please try again.' });

@@ -11,6 +11,9 @@ import SignUp from "./pages/SignUp";
 import FacultyDirectory from "./pages/FacultyDirectory";
 import FacultyProfile from "./pages/FacultyProfile";
 import MyResources from "./pages/MyResources";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import ContactAdmin from "./pages/ContactAdmin";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
 
@@ -54,6 +57,21 @@ function App({ onToggleTheme, isDark }) {
     <SignUp isDark={isDark} onToggleTheme={onToggleTheme} />
   }
 />
+
+            <Route
+              path="/forgot-password"
+              element={<ForgotPassword isDark={isDark} onToggleTheme={onToggleTheme} />}
+            />
+
+            <Route
+              path="/reset-password"
+              element={<ResetPassword isDark={isDark} onToggleTheme={onToggleTheme} />}
+            />
+
+            <Route
+              path="/contact"
+              element={<ContactAdmin isDark={isDark} onToggleTheme={onToggleTheme} />}
+            />
 
             {/* Protected */}
             <Route

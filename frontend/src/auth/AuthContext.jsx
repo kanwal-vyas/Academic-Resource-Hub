@@ -40,8 +40,11 @@ export function AuthProvider({ children }) {
     });
 
     // React to login / logout / token refresh
+    // Skip backend user resolution for PASSWORD_RECOVERY — the ResetPassword
+    // page handles that session directly via its own onAuthStateChange listener.
     const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
+        if (event === "PASSWORD_RECOVERY") return;
         handleSession(session);
       }
     );
@@ -64,8 +67,20 @@ export function AuthProvider({ children }) {
     // onAuthStateChange fires with null session → setUser(null)
   };
 
+  const sendPasswordResetEmail = async (email) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: "http://localhost:5173/reset-password",
+    });
+    if (error) throw error;
+  };
+
+  const updateUserPassword = async (newPassword) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, sendPasswordResetEmail, updateUserPassword }}>
       {children}
     </AuthContext.Provider>
   );
