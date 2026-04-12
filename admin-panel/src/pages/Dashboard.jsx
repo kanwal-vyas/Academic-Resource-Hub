@@ -25,7 +25,10 @@ function Dashboard() {
 
       try {
         const statsRes = await fetch(`${API_BASE}/api/admin/stats`, { headers });
-        if (statsRes.ok) setStats(await statsRes.json());
+        if (statsRes.ok) {
+          const result = await statsRes.json();
+          setStats(result.data || result); // Fallback in case format is off
+        }
       } catch (err) {
         console.error('Dashboard fetch error:', err);
       } finally {
@@ -58,12 +61,12 @@ function Dashboard() {
             <>
               {/* Stats */}
               <div className="stats-grid">
-                <StatsCard icon="✅" label="Total Faculty" value={stats.faculty} color="success" hint="Active faculty" />
-                <StatsCard icon="🎓" label="Total Students" value={stats.students} color="info" hint="Registered students" />
-                <StatsCard icon="📚" label="Courses" value={stats.courses} color="primary" hint="Total courses" />
-                <StatsCard icon="📖" label="Subjects" value={stats.subjects} color="primary" hint="Total subjects" />
-                <StatsCard icon="📁" label="Total Resources" value={stats.total_resources} color="info" hint="All uploads" />
-                <StatsCard icon="🔍" label="Pending Verification" value={stats.pending_resources} color={stats.pending_resources > 0 ? 'warning' : 'success'} hint="Student uploads awaiting review" />
+                <StatsCard icon="✅" label="Total Faculty" value={stats.faculty} color="success" hint="Active faculty" to="/faculty-list" />
+                <StatsCard icon="🎓" label="Total Students" value={stats.students} color="info" hint="Registered students" to="/users" />
+                <StatsCard icon="📚" label="Courses" value={stats.courses} color="primary" hint="Total courses" to="/content" />
+                <StatsCard icon="📖" label="Subjects" value={stats.subjects} color="primary" hint="Total subjects" to="/content" />
+                <StatsCard icon="📁" label="Total Resources" value={stats.total_resources} color="info" hint="All uploads" to="/resources" />
+                <StatsCard icon="🔍" label="Pending Verification" value={stats.pending_resources} color={stats.pending_resources > 0 ? 'warning' : 'success'} hint="Student uploads awaiting review" to="/resources" />
               </div>
             </>
           )}

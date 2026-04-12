@@ -127,9 +127,17 @@ app.get('/resources', authMiddleware, async (req, res) => {
       LEFT JOIN units u ON r.unit_id = u.id
       JOIN users usr ON r.contributor_id = usr.id
       LEFT JOIN users faculty ON so.faculty_id = faculty.id
+      WHERE 
+        r.visibility = 'public' 
+        OR r.visibility IS NULL
+        OR (r.visibility = 'private' AND $1 = true)
+        OR (r.visibility = 'faculty' AND $2 = true)
+        OR r.contributor_id = $3
       ORDER BY r.created_at DESC
     `;
-    const result = await pool.query(query);
+    const isVerified = req.user?.is_verified === true || req.user?.role === 'admin';
+    const isFacultyOrAdmin = req.user?.role === 'faculty' || req.user?.role === 'admin';
+    const result = await pool.query(query, [isVerified, isFacultyOrAdmin, req.user?.id]);
     res.json({ success: true, data: result.rows });
   } catch (error) {
     console.error('Error fetching resources:', error);
@@ -154,10 +162,18 @@ app.get('/resources/latest', authMiddleware, async (req, res) => {
       LEFT JOIN units u ON r.unit_id = u.id
       JOIN users usr ON r.contributor_id = usr.id
       LEFT JOIN users faculty ON so.faculty_id = faculty.id
+      WHERE 
+        r.visibility = 'public' 
+        OR r.visibility IS NULL
+        OR (r.visibility = 'private' AND $1 = true)
+        OR (r.visibility = 'faculty' AND $2 = true)
+        OR r.contributor_id = $3
       ORDER BY r.created_at DESC
       LIMIT 3
     `;
-    const result = await pool.query(query);
+    const isVerified = req.user?.is_verified === true || req.user?.role === 'admin';
+    const isFacultyOrAdmin = req.user?.role === 'faculty' || req.user?.role === 'admin';
+    const result = await pool.query(query, [isVerified, isFacultyOrAdmin, req.user?.id]);
     res.json({ success: true, data: result.rows });
   } catch (error) {
     console.error('Error fetching latest resources:', error);

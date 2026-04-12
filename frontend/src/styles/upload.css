@@ -221,6 +221,7 @@
   gap: var(--space-md);
   padding-top: var(--space-lg);
   border-top: 1px solid var(--border);
+  justify-content: flex-end;
 }
 
 .button-primary,
@@ -235,13 +236,13 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-sm);
+  min-width: 160px;
 }
 
 .button-primary {
   background-color: var(--accent);
   color: var(--surface);
   border: none;
-  flex: 1;
   box-shadow: var(--shadow-sm);
 }
 

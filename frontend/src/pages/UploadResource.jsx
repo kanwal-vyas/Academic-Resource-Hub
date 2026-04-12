@@ -388,6 +388,30 @@ function UploadResource() {
   return (
     <div className="upload-page">
       <div className="upload-card">
+        <div style={{ padding: '0 0 1rem 0' }}>
+          <button 
+            onClick={() => navigate(-1)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#94a3b8',
+              fontSize: '0.95rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              transition: 'color 0.2sease'
+            }}
+            onMouseEnter={(e) => e.target.style.color = '#fff'}
+            onMouseLeave={(e) => e.target.style.color = '#94a3b8'}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back
+          </button>
+        </div>
         <header className="page-header-upload">
           <h1 className="page-title">
             {isEditMode ? "Edit Resource" : "Upload Resource"}
@@ -613,8 +637,8 @@ function UploadResource() {
               >
                 <option value="">Select visibility</option>
                 <option value="public">Public – Everyone</option>
-                <option value="course">Course Only – Enrolled students</option>
-                <option value="restricted">Restricted – Approved users</option>
+                <option value="private">Private – Verified users only</option>
+                <option value="faculty">Faculty only</option>
               </select>
             </div>
           </section>
@@ -627,6 +651,14 @@ function UploadResource() {
 
           <div className="form-actions">
             <button
+              className="button-secondary"
+              type="button"
+              onClick={() => navigate(isEditMode ? "/my-resources" : "/")}
+              disabled={submitting}
+            >
+              Cancel
+            </button>
+            <button
               className="button-primary"
               type="button"
               onClick={handleSubmit}
@@ -637,14 +669,6 @@ function UploadResource() {
               ) : (
                 isEditMode ? "Update Resource" : "Upload Resource"
               )}
-            </button>
-            <button
-              className="button-secondary"
-              type="button"
-              onClick={() => navigate(isEditMode ? "/my-resources" : "/")}
-              disabled={submitting}
-            >
-              Cancel
             </button>
           </div>
 
