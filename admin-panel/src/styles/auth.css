@@ -1,0 +1,157 @@
+/* ============================================================
+   ADMIN PANEL — Auth Styles (dark navy login)
+   ============================================================ */
+
+.admin-login-page {
+  flex: 1;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-login-page::before,
+.admin-login-page::after {
+  content: '';
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.2;
+  pointer-events: none;
+  z-index: 0;
+}
+.admin-login-page::before {
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, var(--accent) 0%, transparent 60%);
+  top: -200px; right: -100px;
+}
+.admin-login-page::after {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, #6366f1 0%, transparent 60%);
+  bottom: -100px; left: -100px;
+}
+
+.admin-login-container {
+  width: 100%;
+  max-width: 440px;
+  padding: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 44px 40px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+  animation: slideUp 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.admin-logo-badge {
+  width: 64px; height: 64px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px;
+  box-shadow: 0 0 0 8px var(--accent-muted), var(--shadow-lg);
+  font-size: 1.8rem;
+}
+
+.admin-login-header { text-align: center; margin-bottom: 32px; }
+
+.admin-login-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.admin-login-subtitle {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+/* Form */
+.admin-form { display: flex; flex-direction: column; gap: 18px; }
+
+.admin-form-group { display: flex; flex-direction: column; gap: 6px; }
+
+.admin-form-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-form-input {
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: 0.93rem;
+  color: var(--text);
+  width: 100%;
+  transition: all var(--transition);
+}
+.admin-form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-muted);
+  background: var(--surface);
+}
+.admin-form-input::placeholder { color: var(--text-muted); }
+
+.password-wrapper { position: relative; }
+.password-wrapper .admin-form-input { padding-right: 44px; }
+.password-toggle {
+  position: absolute; right: 12px; top: 50%;
+  transform: translateY(-50%);
+  background: none; color: var(--text-muted);
+  display: flex; align-items: center;
+  transition: color var(--transition);
+}
+.password-toggle:hover { color: var(--accent); }
+
+.admin-submit {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #0f1923;
+  padding: 13px;
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all var(--transition);
+  box-shadow: 0 4px 16px var(--accent-glow);
+  margin-top: 6px;
+}
+.admin-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px var(--accent-glow);
+}
+.admin-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.admin-error {
+  background: var(--danger-bg);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  color: var(--danger);
+  font-size: 0.85rem;
+}
+
+.admin-role-notice {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 16px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}

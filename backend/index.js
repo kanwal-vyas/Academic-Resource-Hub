@@ -8,6 +8,8 @@ import cors from "cors";
 import { authMiddleware } from './middleware/auth.js';
 import meRouter from "./routes/me.js";
 import facultyRoutes from './routes/facultyRoutes.js';
+import authRoutes from './routes/authRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 const app = express();
 
 // Initialize Supabase client
@@ -97,12 +99,14 @@ function generateStoragePath(subjectId, offeringId, unitId, filename) {
 // ============================================================================
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:5100"],
   credentials: true
 }));
 
 app.use("/", meRouter);
 app.use('/api/faculty', facultyRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/resources', authMiddleware, async (req, res) => {
   try {
@@ -110,6 +114,7 @@ app.get('/resources', authMiddleware, async (req, res) => {
       SELECT 
         r.id, r.title, r.description, r.resource_type, r.content_type,
         r.contributor_id, r.external_url, r.created_at,
+        r.is_verified, r.verified_at,
         s.code AS subject_code, s.name AS subject_name, s.course_id,
         c.name AS course_name, ay.start_year, ay.end_year, u.unit_number,
         usr.role AS contributor_type, usr.is_verified AS contributor_is_verified,
@@ -122,7 +127,6 @@ app.get('/resources', authMiddleware, async (req, res) => {
       LEFT JOIN units u ON r.unit_id = u.id
       JOIN users usr ON r.contributor_id = usr.id
       LEFT JOIN users faculty ON so.faculty_id = faculty.id
-      WHERE r.is_deleted = false
       ORDER BY r.created_at DESC
     `;
     const result = await pool.query(query);
@@ -150,12 +154,10 @@ app.get('/resources/latest', authMiddleware, async (req, res) => {
       LEFT JOIN units u ON r.unit_id = u.id
       JOIN users usr ON r.contributor_id = usr.id
       LEFT JOIN users faculty ON so.faculty_id = faculty.id
-      WHERE r.is_deleted = false
       ORDER BY r.created_at DESC
       LIMIT 3
     `;
     const result = await pool.query(query);
-    console.log("RAW API RESPONSE:", result);
     res.json({ success: true, data: result.rows });
   } catch (error) {
     console.error('Error fetching latest resources:', error);
@@ -167,7 +169,7 @@ app.get('/resources/signed-url/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(
-      'SELECT id, content_type, storage_path, is_deleted FROM resources WHERE id = $1',
+      'SELECT id, content_type, storage_path FROM resources WHERE id = $1',
       [id]
     );
     if (result.rows.length === 0) {
@@ -176,9 +178,6 @@ app.get('/resources/signed-url/:id', authMiddleware, async (req, res) => {
     const resource = result.rows[0];
     if (resource.content_type !== 'file') {
       return res.status(400).json({ success: false, error: 'Resource is not a file' });
-    }
-    if (resource.is_deleted) {
-      return res.status(410).json({ success: false, error: 'Resource has been deleted' });
     }
     const { data: signedUrlData, error: signedUrlError } = await supabase.storage
       .from('resources')
@@ -214,7 +213,7 @@ app.get('/resources/:id', authMiddleware, async (req, res) => {
       LEFT JOIN units u ON r.unit_id = u.id
       JOIN users usr ON r.contributor_id = usr.id
       LEFT JOIN users faculty ON so.faculty_id = faculty.id
-      WHERE r.id = $1 AND r.is_deleted = false
+      WHERE r.id = $1
     `;
     const result = await pool.query(query, [id]);
     if (result.rows.length === 0) {
@@ -277,7 +276,6 @@ app.get('/academic-years', authMiddleware, async (req, res) => {
 app.get('/units', authMiddleware, async (req, res) => {
   try {
     const { subject_id, academic_year_id } = req.query;
-    console.log("UNITS REQUEST:", subject_id, academic_year_id);
     if (!subject_id || !academic_year_id) {
       return res.status(400).json({ success: false, error: 'subject_id and academic_year_id are required' });
     }
@@ -344,16 +342,23 @@ app.post('/resources', authMiddleware, async (req, res) => {
       unitId = await resolveUnit(offering.id, parseInt(unit_number));
     }
 
+    // Auto-verify if the uploader is a verified user; otherwise send to admin queue
+    const autoVerified = req.user.is_verified === true;
+
     const insertQuery = `
       INSERT INTO resources (
         id, subject_id, subject_offering_id, unit_id, title, description,
-        resource_type, content_type, external_url, contributor_id, is_deleted
-      ) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        resource_type, content_type, external_url, contributor_id,
+        is_verified, verified_by, verified_at
+      ) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `;
     const result = await client.query(insertQuery, [
       subject.id, offering.id, unitId, title, description,
-      resource_type, 'external_link', external_url, req.user.id, false
+      resource_type, 'external_link', external_url, req.user.id,
+      autoVerified,
+      autoVerified ? req.user.id : null,
+      autoVerified ? new Date() : null,
     ]);
     await client.query('COMMIT');
     res.status(201).json({ success: true, data: result.rows[0] });
@@ -414,16 +419,23 @@ app.post('/resources/file', authMiddleware, (req, res) => {
 
       if (uploadError) throw new Error(`File upload failed: ${uploadError.message}`);
 
+      // Auto-verify if the uploader is a verified user; otherwise send to admin queue
+      const autoVerified = req.user.is_verified === true;
+
       const insertQuery = `
         INSERT INTO resources (
           id, subject_id, subject_offering_id, unit_id, title, description,
-          resource_type, content_type, storage_path, contributor_id, is_deleted
-        ) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          resource_type, content_type, storage_path, contributor_id,
+          is_verified, verified_by, verified_at
+        ) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `;
       const result = await client.query(insertQuery, [
         subject.id, offering.id, unitId, title, description,
-        resource_type, 'file', storagePath, req.user.id, false
+        resource_type, 'file', storagePath, req.user.id,
+        autoVerified,
+        autoVerified ? req.user.id : null,
+        autoVerified ? new Date() : null,
       ]);
       await client.query('COMMIT');
       res.status(201).json({ success: true, data: result.rows[0] });
@@ -576,122 +588,47 @@ app.put('/resources/file/:id', authMiddleware, (req, res) => {
   req.pipe(busboy);
 });
 
-/**
- * DELETE /resources/:id
- * Soft delete a resource (owner or admin only)
- *
- * BUGS FIXED:
- *   1. BEGIN was called AFTER storage delete — storage was outside the transaction,
- *      so a failed DB update would leave storage already deleted with no rollback possible.
- *      FIX: BEGIN is now called first. Storage delete is intentionally kept outside the
- *      pg transaction (Supabase storage is not part of pg), but the DB soft-delete is
- *      now guaranteed to run inside BEGIN/COMMIT with proper error handling.
- *   2. If storageError occurred, the code returned early without ever running the UPDATE,
- *      so is_deleted stayed false even though storage may have partially deleted.
- *      FIX: Storage errors are logged and non-fatal — the DB soft-delete still runs.
- *      A partially deleted storage file is recoverable; a stuck is_deleted=false is not.
- *   3. No logs anywhere — impossible to debug. FIX: Full logs added at every step.
- */
 app.delete('/resources/:id', authMiddleware, async (req, res) => {
-  // ── STEP 1: LOG ENTRY ──────────────────────────────────────────────────────
-  console.log("DELETE HIT:", req.params.id);
-  console.log("USER:", req.user);
-
   const client = await pool.connect();
   try {
     const { id } = req.params;
-
-    // ── STEP 2: AUTH CHECK ─────────────────────────────────────────────────
     const userIsAdmin = await isAdmin(req.user.id);
     const userIsOwner = await isResourceOwner(id, req.user.id);
-    console.log("AUTH CHECK — isAdmin:", userIsAdmin, "| isOwner:", userIsOwner);
 
     if (!userIsAdmin && !userIsOwner) {
-      console.log("AUTH DENIED for user:", req.user.id, "on resource:", id);
-      return res.status(403).json({
-        success: false,
-        error: 'You do not have permission to delete this resource'
-      });
+      return res.status(403).json({ success: false, error: 'Permission denied' });
     }
 
-    // ── STEP 3: FETCH RESOURCE ─────────────────────────────────────────────
-    // Must happen before BEGIN so we can inspect it cleanly.
-    const fetchResult = await client.query(
-      'SELECT * FROM resources WHERE id = $1 AND is_deleted = false',
-      [id]
-    );
-    console.log("RESOURCE FROM DB:", fetchResult.rows[0] ?? null);
-
+    const fetchResult = await client.query('SELECT * FROM resources WHERE id = $1', [id]);
     if (fetchResult.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'Resource not found or already deleted'
-      });
+      return res.status(404).json({ success: false, error: 'Resource not found' });
     }
-
     const resource = fetchResult.rows[0];
 
-    // ── STEP 4: BEGIN TRANSACTION ──────────────────────────────────────────
-    // FIX: BEGIN is now called before any mutation (storage OR db update).
     await client.query('BEGIN');
 
-    // ── STEP 5: STORAGE DELETE ─────────────────────────────────────────────
-    // Supabase storage is NOT part of the pg transaction, but we log the result
-    // regardless and do NOT abort the soft-delete if storage fails.
-    // Rationale: a stuck is_deleted=false is worse than an orphaned storage file.
-    if (resource.content_type === 'file') {
-      if (!resource.storage_path) {
-        console.log("STORAGE DELETE SKIPPED: storage_path is null for file resource:", id);
-        // Still proceed to soft-delete the DB row — don't leave it dangling.
-      } else {
-        console.log("STORAGE DELETE ATTEMPT — path:", resource.storage_path);
-        const { data: storageData, error: storageError } = await supabase.storage
-          .from('resources')
-          .remove([resource.storage_path]);
-
-        // LOG regardless of success or failure
-        console.log("STORAGE DELETE RESULT:", { data: storageData, error: storageError });
-
-        if (storageError) {
-          // Non-fatal: log the error but continue with the DB soft-delete.
-          // The file can be cleaned up manually; the DB row must be marked deleted.
-          console.error("STORAGE DELETE FAILED (non-fatal, continuing):", storageError.message);
-        }
+    if (resource.content_type === 'file' && resource.storage_path) {
+      const { error: storageError } = await supabase.storage
+        .from('resources')
+        .remove([resource.storage_path]);
+      if (storageError) {
+        console.error('Storage delete failed (non-fatal):', storageError.message);
       }
-    } else {
-      console.log("STORAGE DELETE SKIPPED: content_type is not 'file' (got:", resource.content_type, ")");
     }
 
-    // ── STEP 6: DB SOFT DELETE ─────────────────────────────────────────────
-    console.log("DB UPDATE ATTEMPT — setting is_deleted = true for id:", id);
-    const deleteResult = await client.query(
-      'UPDATE resources SET is_deleted = true WHERE id = $1 RETURNING id, is_deleted',
-      [id]
-    );
-    console.log("DB UPDATE RESULT:", deleteResult.rows[0] ?? null);
-
+    const deleteResult = await client.query('DELETE FROM resources WHERE id = $1 RETURNING id', [id]);
     if (deleteResult.rows.length === 0) {
       await client.query('ROLLBACK');
-      console.error("DB UPDATE RETURNED 0 ROWS — rolling back");
-      return res.status(500).json({
-        success: false,
-        error: 'Database update failed — no rows affected'
-      });
+      return res.status(500).json({ success: false, error: 'Database delete failed' });
     }
 
-    // ── STEP 7: COMMIT ─────────────────────────────────────────────────────
     await client.query('COMMIT');
-    console.log("COMMIT SUCCESS — resource soft-deleted:", id);
-
     return res.json({ success: true });
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error("DELETE ROUTE ERROR — rolling back:", error);
-    return res.status(500).json({
-      success: false,
-      error: 'Failed to delete resource'
-    });
+    console.error('Delete resource error:', error);
+    return res.status(500).json({ success: false, error: 'Failed to delete resource' });
   } finally {
     client.release();
   }

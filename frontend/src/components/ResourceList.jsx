@@ -76,12 +76,9 @@ const fetchSignedUrl = async (resourceId) => {
 // Main Component
 // ===============================
 function ResourceList({ resources, onEdit, onDelete }) {
-  throw new Error("RESOURCE LIST IS RENDERING");
   const [activeResourceId, setActiveResourceId] = useState(null);
   const [error, setError] = useState(null);
-  const { user } = useAuth(); // ← access current user
-  
-  console.log("FRONTEND USER:", user);
+  const { user } = useAuth();
 
   const handleViewResource = async (resource) => {
     setActiveResourceId(resource.id);
@@ -144,25 +141,25 @@ function ResourceList({ resources, onEdit, onDelete }) {
 // ResourceCard Component
 // ===============================
 function ResourceCard({ resource, isActive, onView, onEdit, onDelete, user }) {
-  console.log("RESOURCE:", resource);
-  console.log("USER:", user);
-  console.log("RESOURCE CONTRIBUTOR:", resource.contributor_id);
   const resourceType = getResourceTypeDisplay(resource.resource_type);
-
-  // Safety check: only evaluate if user exists
   const isOwner = user?.id === resource.contributor_id;
-  // ✅ Correct — role comes from backend /me
-const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === 'admin';
   const canModify = isOwner || isAdmin;
+  const isUnverified = resource.is_verified === false;
 
   return (
-    <article className={`resource-card ${isActive ? "selected" : ""}`}>
+    <article className={`resource-card ${isActive ? 'selected' : ''} ${isUnverified ? 'resource-card--unverified' : ''}`}>
       <header className="resource-header">
         <h3>{resource.title}</h3>
         <div className="chips">
           <span className={`chip ${resourceType.className}`}>
             {resourceType.label}
           </span>
+          {isUnverified && (
+            <span className="chip chip-unverified" title="This resource is awaiting admin verification">
+              ⚠ Unverified
+            </span>
+          )}
         </div>
       </header>
 

@@ -1,0 +1,135 @@
+/* ===================================================
+   Faculty List — fl- prefix
+   =================================================== */
+
+.fl-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 4rem;
+  color: var(--text-muted);
+  font-size: 1.5rem;
+}
+.fl-empty p { font-size: 0.9rem; margin: 0; }
+
+.fl-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* ── Card ── */
+.fl-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+.fl-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+.fl-card--open { border-color: var(--accent); }
+
+.fl-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  user-select: none;
+}
+.fl-card-header:hover { background: var(--surface-3); }
+
+.fl-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #0d9488);
+  color: #0f172a;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; font-weight: 800;
+  flex-shrink: 0;
+}
+
+.fl-info { flex: 1; min-width: 0; }
+.fl-name  { font-size: 0.95rem; font-weight: 700; color: var(--text); }
+.fl-email { font-size: 0.78rem; color: var(--text-muted); }
+.fl-meta  { display: flex; align-items: center; gap: 0.5rem; margin-top: 4px; flex-wrap: wrap; }
+.fl-dept  { font-size: 0.72rem; color: var(--text-muted); }
+
+.fl-stats {
+  display: flex;
+  gap: 1.25rem;
+  flex-shrink: 0;
+}
+.fl-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+.fl-stat strong {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+}
+
+.fl-chevron {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  margin-left: 0.25rem;
+}
+
+/* ── Card Body ── */
+.fl-card-body {
+  padding: 0 1.25rem 1.25rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  animation: fadeIn 0.15s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+.fl-detail-row {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  flex-wrap: wrap;
+  padding-top: 0.5rem;
+}
+.fl-detail-row--muted { color: var(--text-muted); font-size: 0.8rem; }
+.fl-detail-label {
+  min-width: 130px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  padding-top: 2px;
+  flex-shrink: 0;
+}
+
+/* ── Availability ── */
+.fl-availability {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  flex-wrap: wrap;
+}
+.fl-avail-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.fl-avail-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+.fl-avail--on  { background: rgba(34,197,94,0.12); color: #22c55e; border-color: rgba(34,197,94,0.25); }
+.fl-avail--off { background: var(--surface-3); color: var(--text-muted); text-decoration: line-through; opacity: 0.5; }

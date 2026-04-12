@@ -100,10 +100,6 @@ function useResources(user) {
 
       const result = await response.json();
 
-      console.log("FULL RESPONSE:", result);
-      console.log("RESOURCES ARRAY:", result.data);
-      console.log("UNIT NUMBERS:", result.data?.map((r) => r.unit_number));
-
       setResources(result.data || []);
     } catch (err) {
       console.error("Error fetching resources:", err);
@@ -455,8 +451,6 @@ function Browse() {
           {!loading && !error && filteredResources.length > 0 && (
             <div className="resource-grid">
               {filteredResources.map((resource) => {
-                console.log("RESOURCE:", resource);
-
                 return (
                   <ResourceCard
                     key={resource.id}
@@ -530,6 +524,14 @@ function ResourceCard({
             {contentTypeLabel}
           </span>
           <span className="chip chip-year">{resource.start_year}</span>
+          {resource.is_verified === false && (
+            <span
+              className="resource-badge resource-badge--unverified"
+              title="Pending admin verification — content may be unreviewed"
+            >
+              ⚠ Unverified
+            </span>
+          )}
         </div>
       </header>
 

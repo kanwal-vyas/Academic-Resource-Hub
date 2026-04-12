@@ -218,3 +218,251 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Edit State & Expandable Details ── */
+
+.fp-header-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  flex: 1;
+}
+
+.fp-edit-btn {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fp-edit-btn:hover {
+  background: var(--interaction);
+  color: var(--surface);
+  border-color: var(--interaction);
+}
+
+.fp-edit-form {
+  background: var(--surface);
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.fp-edit-form h2 {
+  margin: 0;
+  color: var(--primary);
+  font-size: 1.5rem;
+}
+
+.fp-edit-form h3 {
+  margin: var(--space-sm) 0 0;
+  font-size: 1.1rem;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+.fp-edit-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fp-edit-form .form-group label {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.fp-edit-form .form-group input[type="text"],
+.fp-edit-form .form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--background);
+  color: var(--text);
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.fp-edit-form .form-group textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.fp-edit-form .form-group input:focus,
+.fp-edit-form .form-group textarea:focus {
+  outline: none;
+  border-color: var(--interaction);
+}
+
+.fp-edit-form .form-group-checkbox {
+  gap: 0.75rem;
+}
+
+.fp-edit-form .form-group-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fp-form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: var(--space-md);
+}
+
+.fp-form-actions .btn-save {
+  padding: 0.75rem 1.5rem;
+  background: var(--interaction);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fp-form-actions .btn-save:hover:not(:disabled) {
+  background: var(--primary);
+}
+
+.fp-form-actions .btn-cancel {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fp-form-actions .btn-cancel:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--text-secondary);
+}
+
+.fp-availability-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.fp-badge--clickable {
+  cursor: pointer;
+}
+
+.fp-badge--clickable:hover {
+  background: var(--interaction);
+  color: #fff;
+  border-color: var(--interaction);
+}
+
+.fp-availability-details {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--interaction);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-left: 0.5rem;
+  font-size: 0.95rem;
+  color: var(--text);
+  line-height: 1.5;
+  animation: slideDown 0.2s ease-out forwards;
+}
+
+.fp-availability-details p {
+  margin: 0 0 1rem 0;
+  white-space: pre-wrap;
+}
+
+.fp-contact-notice {
+  font-size: 0.85rem;
+  color: var(--accent);
+  background: rgba(46, 204, 113, 0.1);
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  border: 1px solid rgba(46, 204, 113, 0.2);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Unavailable Empty State ── */
+.fp-unavailable-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  padding: 1.1rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  animation: slideDown 0.25s ease-out forwards;
+}
+
+.fp-unavailable-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+  opacity: 0.7;
+}
+
+.fp-unavailable-title {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.fp-unavailable-sub {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ── Badge improvements ── */
+.fp-badge-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.fp-badge-arrow {
+  font-size: 0.65rem;
+  opacity: 0.75;
+  margin-left: 2px;
+  transition: transform 0.2s ease;
+}
+
+/* ── Hint text ── */
+.fp-availability-hint {
+  width: 100%;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin: 0;
+  padding-top: 0.25rem;
+  opacity: 0.75;
+}

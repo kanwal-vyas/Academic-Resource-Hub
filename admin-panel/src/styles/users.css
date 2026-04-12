@@ -1,0 +1,240 @@
+/* ===================================================
+   Users & Faculty List shared styles — ur- / fl- prefix
+   =================================================== */
+
+/* ── Filter Row ── */
+.ur-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: var(--space-xl);
+}
+
+.ur-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+.ur-pill:hover { color: var(--text); border-color: var(--accent); }
+.ur-pill--active { background: var(--accent); color: #0f172a; border-color: var(--accent); }
+
+.ur-pill-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: rgba(0,0,0,0.15);
+}
+.ur-pill--active .ur-pill-count { background: rgba(0,0,0,0.2); }
+
+.ur-search {
+  margin-left: auto;
+  padding: 0.5rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.85rem;
+  width: 280px;
+  transition: border-color 0.18s ease;
+}
+.ur-search::placeholder { color: var(--text-muted); }
+.ur-search:focus { outline: none; border-color: var(--accent); }
+
+/* ── Table ── */
+.ur-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+.ur-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.ur-table thead th {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.ur-table tbody td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: middle;
+}
+.ur-table tbody tr:last-child td { border-bottom: none; }
+.ur-table tbody tr:hover { background: var(--surface-3); }
+
+.ur-name {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+}
+.ur-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #0f172a;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; font-weight: 800;
+  flex-shrink: 0;
+}
+.ur-email { color: var(--text-muted); font-size: 0.82rem; }
+.ur-date { color: var(--text-muted); font-size: 0.8rem; white-space: nowrap; }
+.ur-muted { color: var(--text-muted); font-style: italic; font-size: 0.82rem; }
+.ur-loading { text-align: center; padding: 3rem; color: var(--text-muted); font-size: 0.9rem; }
+.ur-empty { text-align: center; padding: 3rem; color: var(--text-muted); font-size: 0.9rem; }
+
+/* ── Role Tag ── */
+.ur-role-tag {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ur-role--admin   { background: rgba(212,175,55,0.15); color: var(--accent); }
+.ur-role--faculty { background: rgba(20,184,166,0.15); color: #2dd4bf; }
+.ur-role--student { background: rgba(99,102,241,0.15); color: #818cf8; }
+
+/* ── Status ── */
+.ur-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.ur-status--approved { background: rgba(34,197,94,0.12); color: #22c55e; }
+.ur-status--pending  { background: rgba(245,158,11,0.12); color: #f59e0b; }
+.ur-status--rejected { background: rgba(239,68,68,0.12); color: #f87171; }
+
+/* ── Verified / Unverified ── */
+.ur-verified   { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; background: rgba(34,197,94,0.12); color: #22c55e; }
+.ur-unverified { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; background: rgba(239,68,68,0.12); color: #f87171; }
+
+/* ── Modal ── */
+.ur-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.ur-modal {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  width: 90%;
+  max-width: 500px;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+}
+
+.ur-modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface-2);
+}
+
+.ur-modal-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.ur-modal-close {
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  transition: color 0.15s ease;
+}
+.ur-modal-close:hover { color: var(--text); }
+
+.ur-modal-body {
+  padding: 1.5rem;
+}
+
+.ur-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.ur-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.ur-detail-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.ur-detail-value {
+  font-size: 0.95rem;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.ur-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.ur-btn-view {
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  background: var(--surface-3);
+  color: var(--text);
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+.ur-btn-view:hover {
+  background: var(--accent-muted);
+  color: var(--accent-light);
+  border-color: var(--accent-glow);
+}

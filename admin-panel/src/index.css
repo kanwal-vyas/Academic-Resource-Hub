@@ -1,0 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ============================================================
+   ADMIN PANEL — Global Design Tokens (Dark Navy + Gold)
+   ============================================================ */
+:root {
+  --font: 'Inter', system-ui, sans-serif;
+
+  /* Admin brand — matching website sage green */
+  --accent: #8eb29f;
+  --accent-light: #a8c4b5;
+  --accent-dark: #6b8e7f;
+  --accent-muted: rgba(142, 178, 159, 0.15);
+  --accent-glow: rgba(142, 178, 159, 0.25);
+
+  /* Sidebar */
+  --sidebar-bg: #0f1923;
+  --sidebar-border: #1a2535;
+  --sidebar-text: #8fa3b8;
+  --sidebar-text-active: #f1f5f9;
+  --sidebar-active-bg: rgba(142, 178, 159, 0.15);
+
+  /* Surfaces */
+  --bg: #0d1525;
+  --surface: #131f2e;
+  --surface-2: #1a2535;
+  --surface-3: #243040;
+  --border: #1f2f42;
+  --border-subtle: #192535;
+
+  /* Text */
+  --text: #f1f5f9;
+  --text-secondary: #8fa3b8;
+  --text-muted: #4d6480;
+
+  /* Status */
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.12);
+  --warning: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.12);
+  --danger: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.12);
+  --info: #3b82f6;
+  --info-bg: rgba(59, 130, 246, 0.12);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.4);
+  --shadow: 0 4px 6px -1px rgba(0,0,0,.4);
+  --shadow-md: 0 10px 15px -3px rgba(0,0,0,.45);
+  --shadow-lg: 0 20px 25px -5px rgba(0,0,0,.5);
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+  --transition-slow: 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ============================================================
+   Reset & Base
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+a { color: var(--accent); text-decoration: none; transition: color var(--transition); }
+a:hover { color: var(--accent-light); }
+button { font-family: var(--font); cursor: pointer; border: none; outline: none; }
+input, textarea, select { font-family: var(--font); outline: none; }
+#root { min-height: 100vh; display: flex; flex-direction: column; }
+
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: var(--radius-full); }
+
+/* Shared utilities */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: var(--radius-full);
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase;
+}
+.badge-pending  { background: var(--warning-bg); color: var(--warning); }
+.badge-approved { background: var(--success-bg); color: var(--success); }
+.badge-rejected { background: var(--danger-bg);  color: var(--danger);  }
+
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

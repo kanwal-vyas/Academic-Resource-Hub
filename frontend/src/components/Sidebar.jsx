@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 import "../styles/sidebar.css";
 
 const RESOURCES_PATHS = ["/browse", "/my-resources", "/upload"];
@@ -7,6 +8,8 @@ const RESOURCES_PATHS = ["/browse", "/my-resources", "/upload"];
 function Sidebar({ isOpen, toggleSidebar }) {
   const location = useLocation();
 
+  const { user } = useAuth();
+  
   // Auto-expand if we're on any resources path
   const isOnResourcesPath = RESOURCES_PATHS.includes(location.pathname);
   const [resourcesOpen, setResourcesOpen] = useState(isOnResourcesPath);
@@ -92,6 +95,19 @@ function Sidebar({ isOpen, toggleSidebar }) {
           >
             Faculty Directory
           </NavLink>
+
+          {/* My Profile (Faculty Only) */}
+          {user?.role === 'faculty' && (
+            <NavLink
+              to={`/faculty/${user.id}`}
+              className={({ isActive }) =>
+                `sidebar-link ${isActive ? "sidebar-link--active" : ""}`
+              }
+              onClick={toggleSidebar}
+            >
+              My Profile
+            </NavLink>
+          )}
 
         </nav>
       </aside>

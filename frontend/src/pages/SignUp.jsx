@@ -80,7 +80,10 @@ function SignUp({ isDark, onToggleTheme }) {
               </svg>
             </div>
             <h1 className="auth-title">Academic Resource Hub</h1>
-            <p className="auth-subtitle">Create an account to access shared academic resources</p>
+            <p className="auth-subtitle">Create an account to access or share academic resources</p>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '8px', marginBottom: '16px' }}>
+              <strong>Faculty:</strong> Please use your <code>@rru.ac.in</code> email to automatically receive faculty access.
+            </div>
           </div>
 
           {success ? (

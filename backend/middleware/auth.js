@@ -8,7 +8,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-console.log("SERVICE ROLE KEY EXISTS:", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 function computeRole(email) {
   if (!email) return "student";
@@ -45,8 +44,6 @@ export async function authMiddleware(req, res, next) {
   try {
     const { data, error } = await supabase.auth.getUser(token);
 
-    console.log("AUTH RESULT:", data);
-    console.log("AUTH ERROR:", error);
 
     if (error || !data.user) {
       return res.status(401).json({ error: "Invalid token" });
@@ -57,7 +54,7 @@ export async function authMiddleware(req, res, next) {
     let dbUser;
     try {
       const userResult = await pool.query(
-        "SELECT role, is_verified FROM users WHERE id = $1",
+        "SELECT role, is_verified, is_suspended FROM users WHERE id = $1",
         [id]
       );
 
@@ -66,6 +63,10 @@ export async function authMiddleware(req, res, next) {
       }
 
       dbUser = userResult.rows[0];
+
+      if (dbUser.is_suspended) {
+        return res.status(403).json({ error: "Your account has been suspended by an administrator." });
+      }
     } catch (dbErr) {
       console.error("DB FETCH ERROR:", dbErr.message);
       return res.status(500).json({ error: "Database error during authentication" });
@@ -79,11 +80,24 @@ export async function authMiddleware(req, res, next) {
           "UPDATE users SET role = $1 WHERE id = $2",
           [computedRole, id]
         );
-        console.log(`ROLE UPDATED: ${dbUser.role} → ${computedRole} for ${email}`);
         dbUser.role = computedRole;
       } catch (updateErr) {
         console.error("DB ROLE UPDATE ERROR:", updateErr.message);
         return res.status(500).json({ error: "Database error during role update" });
+      }
+    }
+
+    const shouldBeAutoVerified = email.endsWith("@rru.ac.in") || email.endsWith("@student.rru.ac.in");
+    
+    if (shouldBeAutoVerified && dbUser.is_verified !== true) {
+      try {
+        await pool.query(
+          "UPDATE users SET is_verified = true WHERE id = $1",
+          [id]
+        );
+        dbUser.is_verified = true;
+      } catch (updateErr) {
+        console.error("DB VERIFIED UPDATE ERROR:", updateErr.message);
       }
     }
 

@@ -255,6 +255,91 @@
 }
 
 /* ===============================
+   Owner Action Buttons (Edit / Delete)
+   =============================== */
+.resource-owner-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+}
+
+.resource-action-edit,
+.resource-action-delete {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  letter-spacing: 0.02em;
+}
+
+/* Edit — blue/interaction tone */
+.resource-action-edit {
+  background-color: transparent;
+  color: var(--interaction);
+  border: 1.5px solid var(--interaction);
+}
+
+.resource-action-edit:hover {
+  background-color: var(--interaction);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(93, 122, 153, 0.35);
+}
+
+.resource-action-edit:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Delete — danger red */
+.resource-action-delete {
+  background-color: transparent;
+  color: #e05252;
+  border: 1.5px solid #e05252;
+}
+
+.resource-action-delete:hover {
+  background-color: #e05252;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(224, 82, 82, 0.35);
+}
+
+.resource-action-delete:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Dark mode variants */
+.dark .resource-action-edit {
+  color: #819cb8;
+  border-color: #819cb8;
+}
+
+.dark .resource-action-edit:hover {
+  background-color: rgba(129, 156, 184, 0.2);
+  color: #a8c4d8;
+  border-color: #a8c4d8;
+  box-shadow: 0 4px 12px rgba(129, 156, 184, 0.2);
+}
+
+.dark .resource-action-delete {
+  color: #f08080;
+  border-color: #f08080;
+}
+
+.dark .resource-action-delete:hover {
+  background-color: rgba(240, 128, 128, 0.15);
+  color: #f5a0a0;
+  border-color: #f5a0a0;
+  box-shadow: 0 4px 12px rgba(240, 128, 128, 0.2);
+}
+
+/* ===============================
    Contributor Badges
    =============================== */
 .verified-badge {
@@ -465,6 +550,19 @@
   color: #819cb8;
   border-color: rgba(129, 156, 184, 0.3);
 }
+
+/* Unverified resource — amber warning */
+.resource-badge--unverified {
+  background-color: #fffbeb;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+.dark .resource-badge--unverified {
+  background-color: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
 
 /* ===============================
    State Messages

@@ -1,0 +1,235 @@
+/* ===================================================
+   Content Management — cm- prefix
+   =================================================== */
+
+/* ── Tabs Bar ── */
+.cm-tabs-bar {
+  display: flex;
+  gap: 0.25rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0.35rem;
+  margin-bottom: var(--space-xl);
+  flex-wrap: wrap;
+}
+
+.cm-tab-btn {
+  padding: 0.55rem 1.1rem;
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+.cm-tab-btn:hover { color: var(--text); background: var(--surface-3); }
+.cm-tab-btn--active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* ── Tab Content ── */
+.cm-tab-content { display: flex; flex-direction: column; gap: var(--space-lg); }
+
+.cm-tab-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+.cm-tab-header-actions { display: flex; align-items: center; gap: var(--space-sm); }
+
+.cm-tab-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ── Count Badge ── */
+.cm-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--accent); color: #fff;
+  border-radius: 999px; font-size: 0.7rem; font-weight: 700;
+  padding: 1px 7px; min-width: 22px;
+}
+.cm-count-small {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface-3); color: var(--text);
+  border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+  padding: 1px 8px; min-width: 20px;
+}
+
+/* ── Table ── */
+.cm-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+.cm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.cm-table thead th {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.cm-table tbody td {
+  padding: 0.85rem 1rem;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+.cm-table tbody tr:last-child td { border-bottom: none; }
+.cm-table tbody tr:hover { background: var(--surface-3); }
+.cm-name { font-weight: 500; }
+
+.cm-code-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(212,175,55,0.15);
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: monospace;
+  letter-spacing: 0.04em;
+}
+.cm-muted { color: var(--text-muted); font-style: italic; font-size: 0.85rem; }
+
+.cm-empty {
+  text-align: center; padding: 3rem 1rem;
+  color: var(--text-muted); font-size: 0.9rem;
+}
+.cm-loading { text-align: center; padding: 3rem; color: var(--text-muted); font-size: 0.9rem; }
+
+/* ── Select filter ── */
+.cm-select {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+/* ── Icon Buttons ── */
+.cm-icon-btn {
+  width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent; cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.18s ease;
+}
+.cm-icon-btn--danger:hover { background: rgba(220,38,38,0.12); border-color: #dc2626; }
+
+/* ── Buttons ── */
+.cm-btn {
+  padding: 0.55rem 1.1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.87rem; font-weight: 600;
+  cursor: pointer; border: none;
+  transition: all 0.18s ease;
+}
+.cm-btn-primary { background: var(--accent); color: #0f172a; }
+.cm-btn-primary:hover { filter: brightness(1.1); }
+.cm-btn-danger { background: #dc2626; color: #fff; }
+.cm-btn-danger:hover { background: #b91c1c; }
+.cm-btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+.cm-btn-ghost:hover { color: var(--text); }
+.cm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Modal ── */
+.cm-modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+  animation: fadeInOverlay 0.15s ease;
+}
+@keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
+
+.cm-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  width: 100%; max-width: 500px;
+  max-height: 90vh; overflow-y: auto;
+  animation: slideUp 0.2s ease;
+}
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.cm-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.cm-modal-header h3 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--text); }
+.cm-modal-close {
+  background: none; border: none; font-size: 1.1rem;
+  cursor: pointer; color: var(--text-muted);
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm);
+}
+.cm-modal-close:hover { background: var(--surface-3); color: var(--text); }
+
+.cm-modal-body { padding: 1.5rem; }
+.cm-modal-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
+
+/* ── Form ── */
+.cm-form { display: flex; flex-direction: column; gap: 1rem; }
+.cm-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.cm-field { display: flex; flex-direction: column; gap: 0.35rem; }
+.cm-field label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+.cm-field input, .cm-field select, .cm-field textarea {
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: border-color 0.18s;
+}
+.cm-field input:focus, .cm-field select:focus, .cm-field textarea:focus {
+  outline: none; border-color: var(--accent);
+}
+
+/* ── Confirm ── */
+.cm-confirm-text { color: var(--text); line-height: 1.6; font-size: 0.9rem; }
+
+/* ── Toast ── */
+.cm-toast {
+  position: fixed; bottom: 2rem; right: 2rem; z-index: 9999;
+  padding: 0.85rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  font-size: 0.9rem; font-weight: 600;
+  color: var(--text);
+  animation: slideInRight 0.25s ease;
+}
+@keyframes slideInRight { from { transform: translateX(60px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.cm-toast--success { border-left: 3px solid #22c55e; }
+.cm-toast--error { border-left: 3px solid #ef4444; }

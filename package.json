@@ -1,13 +1,27 @@
 {
-  "name": "academic-knowledge-hub",
+  "name": "academic-resource-hub",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A multi-module academic resource sharing platform with Student, Faculty, and Admin portals.",
+  "private": true,
+  "type": "commonjs",
+  "workspaces": [
+    "frontend",
+    "admin-panel",
+    "backend"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "concurrently --names \"BACKEND,FRONTEND,ADMIN\" --prefix-colors \"cyan,green,yellow\" \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:admin\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:admin": "cd admin-panel && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "build:admin": "cd admin-panel && npm run build",
+    "build:all": "npm run build:frontend && npm run build:admin"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs"
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
 }
