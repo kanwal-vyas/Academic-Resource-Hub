@@ -3,10 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../auth/AuthContext";
 import { LoadingState, ErrorState, EmptyState } from "./Browse";
+import { API_BASE_URL } from "../utils/api";
 import "../styles/browse.css";
 import "../styles/my-resources.css";
-
-const API_BASE_URL = "http://localhost:5000";
 
 // ─── helper ────────────────────────────────────────────────────────────────
 async function getToken() {
@@ -31,15 +30,13 @@ function useMyResources(user) {
       const token = await getToken();
       if (!token) { setError("Authentication required"); return; }
 
-      const res = await fetch(`${API_BASE_URL}/resources`, {
+      const res = await fetch(`${API_BASE_URL}/resources/my`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
 
-      // Filter client-side to only this user's resources
-      const mine = (json.data || []).filter((r) => r.contributor_id === user.id);
-      setResources(mine);
+      setResources(json.data || []);
     } catch (err) {
       setError(err.message);
     } finally {

@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import { API_BASE_URL } from "../utils/api";
 import "../styles/upload.css";
-
-const API_BASE_URL = "http://localhost:5000";
 
 // ─── API Layer ────────────────────────────────────────────────────────────────
 

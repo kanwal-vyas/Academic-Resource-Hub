@@ -3,12 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../auth/AuthContext";
 import FacultyCard from "../components/FacultyCard";
+import { API_BASE_URL } from "../utils/api";
 import "../styles/home.css";
-
-// ===============================
-// Constants
-// ===============================
-const API_BASE_URL = "http://localhost:5000";
 
 // ===============================
 // Utility Functions
@@ -113,8 +109,8 @@ function useLatestFaculty(user) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      setFaculty(data);
+      const responseJson = await response.json();
+      setFaculty(responseJson.data || []);
     } catch (err) {
       console.error("Error fetching faculty:", err);
       setError("Failed to load faculty");

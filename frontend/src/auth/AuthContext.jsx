@@ -1,9 +1,8 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
+import { API_BASE_URL } from "../utils/api";
 
 const AuthContext = createContext(null);
-
-const API_BASE_URL = "http://localhost:5000";
 
 // Fetch the full user object from backend using the Supabase token
 async function fetchBackendUser(token) {
@@ -69,7 +68,7 @@ export function AuthProvider({ children }) {
 
   const sendPasswordResetEmail = async (email) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: "http://localhost:5173/reset-password",
+      redirectTo: `${import.meta.env.VITE_APP_URL || "http://localhost:5173"}/reset-password`,
     });
     if (error) throw error;
   };

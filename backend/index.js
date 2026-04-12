@@ -165,6 +165,37 @@ app.get('/resources/latest', authMiddleware, async (req, res) => {
   }
 });
 
+app.get('/resources/my', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const query = `
+      SELECT 
+        r.id, r.title, r.description, r.resource_type, r.content_type,
+        r.contributor_id, r.external_url, r.created_at,
+        r.is_verified, r.verified_at,
+        s.code AS subject_code, s.name AS subject_name, s.course_id,
+        c.name AS course_name, ay.start_year, ay.end_year, u.unit_number,
+        usr.role AS contributor_type, usr.is_verified AS contributor_is_verified,
+        faculty.full_name AS faculty_name
+      FROM resources r
+      JOIN subjects s ON r.subject_id = s.id
+      JOIN courses c ON s.course_id = c.id
+      LEFT JOIN subject_offerings so ON r.subject_offering_id = so.id
+      LEFT JOIN academic_years ay ON so.academic_year_id = ay.id
+      LEFT JOIN units u ON r.unit_id = u.id
+      JOIN users usr ON r.contributor_id = usr.id
+      LEFT JOIN users faculty ON so.faculty_id = faculty.id
+      WHERE r.contributor_id = $1
+      ORDER BY r.created_at DESC
+    `;
+    const result = await pool.query(query, [userId]);
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('Error fetching my resources:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch your resources' });
+  }
+});
+
 app.get('/resources/signed-url/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;

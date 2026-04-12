@@ -38,7 +38,7 @@ function AdminRoute({ children }) {
   }
 
 
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user || user.role !== 'admin') return <Navigate to="/login" replace />;
   return children;
 }
 

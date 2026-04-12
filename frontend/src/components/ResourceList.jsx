@@ -1,11 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../supabaseClient";
-import { useAuth } from "../context/AuthContext"; // adjust path if needed
-
-// ===============================
-// Constants
-// ===============================
-const API_BASE_URL = "http://localhost:5000";
+import { useAuth } from "../auth/AuthContext";
+import { API_BASE_URL } from "../utils/api";
 
 const RESOURCE_TYPE_CONFIG = {
   question_paper: {

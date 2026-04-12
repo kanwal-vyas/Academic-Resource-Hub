@@ -16,7 +16,7 @@ const router = express.Router();
 // Middleware: admin-only guard
 function adminOnly(req, res, next) {
   if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Admin access required' });
+    return res.status(403).json({ success: false, error: 'Admin access required' });
   }
   next();
 }
@@ -37,16 +37,19 @@ router.get('/stats', authMiddleware, adminOnly, async (req, res) => {
     ]);
 
     res.json({
-      faculty: parseInt(facultyRes.rows[0].count),
-      students: parseInt(studentsRes.rows[0].count),
-      courses: parseInt(coursesRes.rows[0].count),
-      subjects: parseInt(subjectsRes.rows[0].count),
-      total_resources: parseInt(totalResourcesRes.rows[0].count),
-      pending_resources: parseInt(pendingResourcesRes.rows[0].count),
+      success: true,
+      data: {
+        faculty: parseInt(facultyRes.rows[0].count),
+        students: parseInt(studentsRes.rows[0].count),
+        courses: parseInt(coursesRes.rows[0].count),
+        subjects: parseInt(subjectsRes.rows[0].count),
+        total_resources: parseInt(totalResourcesRes.rows[0].count),
+        pending_resources: parseInt(pendingResourcesRes.rows[0].count),
+      }
     });
   } catch (err) {
     console.error('Error fetching stats:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
@@ -82,7 +85,7 @@ router.post('/courses', authMiddleware, adminOnly, async (req, res) => {
     );
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (err) {
-    if (err.code === '23505') return res.status(409).json({ error: 'Course code already exists' });
+    if (err.code === '23505') return res.status(409).json({ success: false, error: 'Course code already exists' });
     console.error('Error creating course:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -92,7 +95,7 @@ router.delete('/courses/:id', authMiddleware, adminOnly, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query(`DELETE FROM courses WHERE id = $1 RETURNING id`, [id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Course not found' });
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Course not found' });
     res.json({ success: true });
   } catch (err) {
     console.error('Error deleting course:', err);
@@ -133,7 +136,7 @@ router.post('/subjects', authMiddleware, adminOnly, async (req, res) => {
     );
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (err) {
-    if (err.code === '23505') return res.status(409).json({ error: 'Subject code already exists' });
+    if (err.code === '23505') return res.status(409).json({ success: false, error: 'Subject code already exists' });
     console.error('Error creating subject:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -143,7 +146,7 @@ router.delete('/subjects/:id', authMiddleware, adminOnly, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query(`DELETE FROM subjects WHERE id = $1 RETURNING id`, [id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Subject not found' });
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Subject not found' });
     res.json({ success: true });
   } catch (err) {
     console.error('Error deleting subject:', err);
@@ -174,7 +177,7 @@ router.post('/academic-years', authMiddleware, adminOnly, async (req, res) => {
     );
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (err) {
-    if (err.code === '23505') return res.status(409).json({ error: 'Academic year already exists' });
+    if (err.code === '23505') return res.status(409).json({ success: false, error: 'Academic year already exists' });
     console.error('Error creating academic year:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -184,7 +187,7 @@ router.delete('/academic-years/:id', authMiddleware, adminOnly, async (req, res)
   const { id } = req.params;
   try {
     const result = await pool.query(`DELETE FROM academic_years WHERE id = $1 RETURNING id`, [id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Not found' });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Cannot delete — offerings may reference this year' });
@@ -229,7 +232,7 @@ router.post('/subject-offerings', authMiddleware, adminOnly, async (req, res) =>
     );
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (err) {
-    if (err.code === '23505') return res.status(409).json({ error: 'This subject offering already exists for that year' });
+    if (err.code === '23505') return res.status(409).json({ success: false, error: 'This subject offering already exists for that year' });
     console.error('Error creating offering:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -239,7 +242,7 @@ router.delete('/subject-offerings/:id', authMiddleware, adminOnly, async (req, r
   const { id } = req.params;
   try {
     const result = await pool.query(`DELETE FROM subject_offerings WHERE id = $1 RETURNING id`, [id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Not found' });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Cannot delete — units or resources may exist under this offering' });
@@ -284,7 +287,7 @@ router.post('/units', authMiddleware, adminOnly, async (req, res) => {
     );
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (err) {
-    if (err.code === '23505') return res.status(409).json({ error: 'This unit number already exists for this offering' });
+    if (err.code === '23505') return res.status(409).json({ success: false, error: 'This unit number already exists for this offering' });
     console.error('Error creating unit:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -294,7 +297,7 @@ router.delete('/units/:id', authMiddleware, adminOnly, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query(`DELETE FROM units WHERE id = $1 RETURNING id`, [id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Not found' });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Cannot delete — resources may exist under this unit' });
@@ -359,7 +362,7 @@ router.put('/resources/:id/verify', authMiddleware, adminOnly, async (req, res) 
        WHERE id = $2 RETURNING id, title, is_verified`,
       [req.user.id, id]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Resource not found' });
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Resource not found' });
     res.json({ success: true, data: result.rows[0] });
   } catch (err) {
     console.error('Error verifying resource:', err);
@@ -371,7 +374,7 @@ router.delete('/resources/:id', authMiddleware, adminOnly, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query(`DELETE FROM resources WHERE id = $1 RETURNING id`, [id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Resource not found' });
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Resource not found' });
     res.json({ success: true });
   } catch (err) {
     console.error('Error deleting resource:', err);
@@ -412,7 +415,7 @@ router.post('/users/:id/verify', authMiddleware, adminOnly, async (req, res) => 
     });
     if (authError) {
       console.error('Supabase Auth verification failed:', authError);
-      return res.status(500).json({ error: 'Failed to verify email in Supabase' });
+      return res.status(500).json({ success: false, error: 'Failed to verify email in Supabase' });
     }
 
     // 2. Mark as verified in local Users table
@@ -434,7 +437,7 @@ router.post('/users/:id/unverify', authMiddleware, adminOnly, async (req, res) =
     });
     if (authError) {
       console.error('Supabase Auth unverification failed:', authError);
-      return res.status(500).json({ error: 'Failed to unverify email in Supabase' });
+      return res.status(500).json({ success: false, error: 'Failed to unverify email in Supabase' });
     }
 
     // 2. Mark as unverified in local Users table
@@ -455,7 +458,7 @@ router.post('/users/:id/suspend', authMiddleware, adminOnly, async (req, res) =>
     });
     if (authError) {
       console.error('Supabase Auth ban failed:', authError);
-      return res.status(500).json({ error: 'Failed to suspend user in Supabase' });
+      return res.status(500).json({ success: false, error: 'Failed to suspend user in Supabase' });
     }
 
     await pool.query('UPDATE users SET is_suspended = true WHERE id = $1', [id]);
@@ -474,7 +477,7 @@ router.post('/users/:id/unsuspend', authMiddleware, adminOnly, async (req, res) 
     });
     if (authError) {
       console.error('Supabase Auth unban failed:', authError);
-      return res.status(500).json({ error: 'Failed to unsuspend user in Supabase' });
+      return res.status(500).json({ success: false, error: 'Failed to unsuspend user in Supabase' });
     }
 
     await pool.query('UPDATE users SET is_suspended = false WHERE id = $1', [id]);
@@ -546,7 +549,7 @@ router.put('/faculty/:id', authMiddleware, adminOnly, async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Faculty profile not found' });
+      return res.status(404).json({ success: false, error: 'Faculty profile not found' });
     }
 
     res.json({ success: true, data: result.rows[0] });
@@ -583,7 +586,7 @@ router.patch('/messages/:id/read', authMiddleware, adminOnly, async (req, res) =
       `UPDATE contact_messages SET is_read = true WHERE id = $1 RETURNING id`,
       [id]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Message not found' });
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Message not found' });
     res.json({ success: true });
   } catch (err) {
     console.error('Error marking message as read:', err);
@@ -596,7 +599,7 @@ router.delete('/messages/:id', authMiddleware, adminOnly, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query(`DELETE FROM contact_messages WHERE id = $1 RETURNING id`, [id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Message not found' });
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Message not found' });
     res.json({ success: true });
   } catch (err) {
     console.error('Error deleting message:', err);
@@ -605,3 +608,4 @@ router.delete('/messages/:id', authMiddleware, adminOnly, async (req, res) => {
 });
 
 export default router;
+

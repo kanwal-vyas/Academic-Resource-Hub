@@ -2,10 +2,9 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../auth/AuthContext";
+import { API_BASE_URL } from "../utils/api";
 import "../styles/home.css";
 import "../styles/faculty-profile.css";
-
-const API_BASE_URL = "http://localhost:5000";
 
 const getInitials = (fullName) => {
   if (!fullName) return "?";
@@ -57,13 +56,13 @@ function FacultyProfile() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const result = await response.json();
 
-      if (data.error) {
-        setError(data.error);
+      if (result.error) {
+        setError(result.error);
       } else {
-        setFaculty(data);
-        setEditForm(data);
+        setFaculty(result.data || null);
+        setEditForm(result.data || {});
       }
     } catch (err) {
       console.error("Error fetching faculty profile:", err);

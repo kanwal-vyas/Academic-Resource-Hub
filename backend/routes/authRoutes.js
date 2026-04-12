@@ -15,14 +15,14 @@ const supabase = createClient(
 // Public endpoint to check if an email is registered
 router.post('/check-email', async (req, res) => {
   const { email } = req.body;
-  if (!email) return res.status(400).json({ error: 'Email is required' });
+  if (!email) return res.status(400).json({ success: false, error: 'Email is required' });
 
   try {
     const result = await pool.query('SELECT 1 FROM users WHERE email = $1', [email]);
-    res.json({ exists: result.rows.length > 0 });
+    res.json({ success: true, exists: result.rows.length > 0 });
   } catch (err) {
     console.error('Check email error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
@@ -31,7 +31,7 @@ router.post('/check-email', async (req, res) => {
 router.post('/contact', async (req, res) => {
   const { name, email, subject, message } = req.body;
   if (!name || !email || !message) {
-    return res.status(400).json({ error: 'name, email, and message are required' });
+    return res.status(400).json({ success: false, error: 'name, email, and message are required' });
   }
   try {
     await pool.query(
@@ -42,21 +42,21 @@ router.post('/contact', async (req, res) => {
     res.status(201).json({ success: true, message: 'Message sent successfully' });
   } catch (err) {
     console.error('Contact form error:', err);
-    res.status(500).json({ error: 'Failed to send message. Please try again.' });
+    res.status(500).json({ success: false, error: 'Failed to send message. Please try again.' });
   }
 });
 
 // POST /api/auth/faculty/register
-// Faculty self-registration — creates Supabase user + DB records, sets status = 'pending'
+// Faculty self-registration — creates Supabase user + DB records
 router.post('/faculty/register', async (req, res) => {
   const { email, password, full_name, department, employee_id, education, research_interests } = req.body;
 
   if (!email || !password || !full_name || !department || !employee_id) {
-    return res.status(400).json({ error: 'Missing required fields: email, password, full_name, department, employee_id' });
+    return res.status(400).json({ success: false, error: 'Missing required fields: email, password, full_name, department, employee_id' });
   }
 
   if (!email.endsWith('@rru.ac.in')) {
-    return res.status(400).json({ error: 'Only @rru.ac.in email addresses can register as faculty' });
+    return res.status(400).json({ success: false, error: 'Only @rru.ac.in email addresses can register as faculty' });
   }
 
   try {
@@ -70,18 +70,18 @@ router.post('/faculty/register', async (req, res) => {
 
     if (authError) {
       if (authError.message.includes('already registered')) {
-        return res.status(409).json({ error: 'An account with this email already exists' });
+        return res.status(409).json({ success: false, error: 'An account with this email already exists' });
       }
-      return res.status(400).json({ error: authError.message });
+      return res.status(400).json({ success: false, error: authError.message });
     }
 
     const userId = authData.user.id;
 
-    // 2. Insert into users table with role = 'faculty'
+    // 2. Insert into users table with role = 'faculty' and is_verified = true (auto-approved via domain)
     await pool.query(
       `INSERT INTO users (id, email, full_name, role, is_verified)
-       VALUES ($1, $2, $3, 'faculty', false)
-       ON CONFLICT (id) DO UPDATE SET full_name = $3, role = 'faculty'`,
+       VALUES ($1, $2, $3, 'faculty', true)
+       ON CONFLICT (id) DO UPDATE SET full_name = $3, role = 'faculty', is_verified = true`,
       [userId, email, full_name]
     );
 
@@ -94,10 +94,10 @@ router.post('/faculty/register', async (req, res) => {
       [userId, department, employee_id, education || null, research_interests || null]
     );
 
-    res.status(201).json({ message: 'Registration successful! You may now log in.', userId });
+    res.status(201).json({ success: true, message: 'Registration successful! You may now log in.', data: { userId } });
   } catch (err) {
     console.error('Faculty registration error:', err);
-    res.status(500).json({ error: 'Registration failed. Please try again.' });
+    res.status(500).json({ success: false, error: 'Registration failed. Please try again.' });
   }
 });
 
@@ -106,14 +106,14 @@ router.post('/faculty/register', async (req, res) => {
 router.get('/faculty/status', async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Missing token' });
+    return res.status(401).json({ success: false, error: 'Missing token' });
   }
 
   const token = authHeader.split(' ')[1];
   const { data, error } = await supabase.auth.getUser(token);
 
   if (error || !data.user) {
-    return res.status(401).json({ error: 'Invalid token' });
+    return res.status(401).json({ success: false, error: 'Invalid token' });
   }
 
   try {
@@ -126,13 +126,13 @@ router.get('/faculty/status', async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Faculty profile not found' });
+      return res.status(404).json({ success: false, error: 'Faculty profile not found' });
     }
 
-    res.json(result.rows[0]);
+    res.json({ success: true, data: result.rows[0] });
   } catch (err) {
     console.error('Status check error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 

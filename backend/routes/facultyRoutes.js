@@ -4,6 +4,7 @@ import { authMiddleware } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// GET /api/faculty — all faculty
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(`
@@ -21,14 +22,14 @@ router.get('/', authMiddleware, async (req, res) => {
       WHERE u.role = 'faculty'
       ORDER BY f.updated_at DESC
     `);
-
-    res.json(result.rows);
+    res.json({ success: true, data: result.rows });
   } catch (error) {
     console.error('Error fetching faculty:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
+// GET /api/faculty/recent — latest 2 faculty for homepage
 router.get('/recent', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(`
@@ -47,19 +48,19 @@ router.get('/recent', authMiddleware, async (req, res) => {
       ORDER BY f.updated_at DESC
       LIMIT 2
     `);
-
-    res.json(result.rows);
+    res.json({ success: true, data: result.rows });
   } catch (error) {
     console.error('Error fetching recent faculty:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
+// PUT /api/faculty/profile — faculty updates their own profile
 router.put('/profile', authMiddleware, async (req, res) => {
   try {
     const { id: userId, role } = req.user;
     if (role !== 'faculty') {
-      return res.status(403).json({ error: 'Only faculty can update profiles' });
+      return res.status(403).json({ success: false, error: 'Only faculty can update profiles' });
     }
 
     const {
@@ -111,13 +112,14 @@ router.put('/profile', authMiddleware, async (req, res) => {
       ]);
     }
 
-    res.json(result.rows[0]);
+    res.json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error('Error updating faculty profile:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
+// GET /api/faculty/:id — single faculty profile
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -141,13 +143,13 @@ router.get('/:id', authMiddleware, async (req, res) => {
     `, [id]);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Faculty not found' });
+      return res.status(404).json({ success: false, error: 'Faculty not found' });
     }
 
-    res.json(result.rows[0]);
+    res.json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error('Error fetching faculty by id:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 

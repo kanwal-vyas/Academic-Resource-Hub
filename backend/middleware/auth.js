@@ -36,7 +36,7 @@ export async function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Missing token" });
+    return res.status(401).json({ success: false, error: "Missing token" });
   }
 
   const token = authHeader.split(" ")[1];
@@ -46,7 +46,7 @@ export async function authMiddleware(req, res, next) {
 
 
     if (error || !data.user) {
-      return res.status(401).json({ error: "Invalid token" });
+      return res.status(401).json({ success: false, error: "Invalid token" });
     }
 
     const { id, email } = data.user;
@@ -59,17 +59,17 @@ export async function authMiddleware(req, res, next) {
       );
 
       if (userResult.rows.length === 0) {
-        return res.status(403).json({ error: "User not found in system" });
+        return res.status(403).json({ success: false, error: "User not found in system" });
       }
 
       dbUser = userResult.rows[0];
 
       if (dbUser.is_suspended) {
-        return res.status(403).json({ error: "Your account has been suspended by an administrator." });
+        return res.status(403).json({ success: false, error: "Your account has been suspended by an administrator." });
       }
     } catch (dbErr) {
       console.error("DB FETCH ERROR:", dbErr.message);
-      return res.status(500).json({ error: "Database error during authentication" });
+      return res.status(500).json({ success: false, error: "Database error during authentication" });
     }
 
     const computedRole = computeRole(email);
@@ -83,7 +83,7 @@ export async function authMiddleware(req, res, next) {
         dbUser.role = computedRole;
       } catch (updateErr) {
         console.error("DB ROLE UPDATE ERROR:", updateErr.message);
-        return res.status(500).json({ error: "Database error during role update" });
+        return res.status(500).json({ success: false, error: "Database error during role update" });
       }
     }
 
@@ -111,6 +111,6 @@ export async function authMiddleware(req, res, next) {
     next();
   } catch (err) {
     console.error("AUTH ERROR:", err.message);
-    return res.status(401).json({ error: "Invalid or missing token" });
+    return res.status(401).json({ success: false, error: "Invalid or missing token" });
   }
 }

@@ -2,12 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../auth/AuthContext";
+import { API_BASE_URL } from "../utils/api";
 import "../styles/browse.css";
-
-// ===============================
-// Constants
-// ===============================
-const API_BASE_URL = "http://localhost:5000";
 
 const RESOURCE_TYPE_CONFIG = {
   question_paper: {
@@ -79,7 +75,6 @@ function useResources(user) {
   const fetchResources = async () => {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData?.session?.access_token;
-    console.log("TOKEN:", token);
 
     if (!token) {
       setError("Authentication required");
@@ -176,6 +171,7 @@ function Browse() {
   const [selectedFaculty, setSelectedFaculty] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [selectedResourceId, setSelectedResourceId] = useState(null);
 
@@ -221,6 +217,18 @@ function Browse() {
 
   // Filter resources
   const filteredResources = resources
+    .filter((r) => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase().trim();
+      return (
+        (r.title && r.title.toLowerCase().includes(q)) ||
+        (r.description && r.description.toLowerCase().includes(q)) ||
+        (r.course_name && r.course_name.toLowerCase().includes(q)) ||
+        (r.subject_name && r.subject_name.toLowerCase().includes(q)) ||
+        (r.faculty_name && r.faculty_name.toLowerCase().includes(q)) ||
+        (r.resource_type && r.resource_type.toLowerCase().replace(/_/g, ' ').includes(q))
+      );
+    })
     .filter(
       (r) =>
         selectedCourse === "" ||
@@ -310,7 +318,44 @@ function Browse() {
         {/* Filters Section */}
         <section className="filters-section">
           <div className="card filters-card">
-            <h2 className="filters-title">Filter Resources</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+              <h2 className="filters-title" style={{ margin: 0 }}>Filter Resources</h2>
+              
+              <div className="search-bar-container" style={{ position: 'relative', flex: '1 1 300px', maxWidth: '500px' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }}>
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search by title, subject, or faculty..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{ 
+                    width: "100%", 
+                    padding: "0.75rem 1rem 0.75rem 2.5rem", 
+                    borderRadius: "12px", 
+                    border: "1px solid rgba(255, 255, 255, 0.08)", 
+                    background: "rgba(15, 23, 42, 0.6)", 
+                    color: "#f8fafc", 
+                    fontSize: "0.95rem",
+                    transition: "all 0.2s ease",
+                    outline: "none",
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.background = "rgba(15, 23, 42, 0.9)";
+                    e.target.style.border = "1px solid rgba(14, 165, 233, 0.5)";
+                    e.target.style.boxShadow = "0 0 0 3px rgba(14, 165, 233, 0.15)";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.background = "rgba(15, 23, 42, 0.6)";
+                    e.target.style.border = "1px solid rgba(255, 255, 255, 0.08)";
+                    e.target.style.boxShadow = "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)";
+                  }}
+                />
+              </div>
+            </div>
 
             <div className="filter-grid">
               {/* Course Filter */}

@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { API_BASE_URL } from "../utils/api";
 import "../styles/auth.css";
 
 function ForgotPassword({ isDark, onToggleTheme }) {
   const { sendPasswordResetEmail } = useAuth();
-  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");

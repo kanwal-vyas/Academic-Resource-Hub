@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { API_BASE_URL } from "../utils/api";
 import "../styles/auth.css";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 function ContactAdmin({ isDark, onToggleTheme }) {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
