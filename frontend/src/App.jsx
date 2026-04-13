@@ -18,8 +18,23 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
 
 function App({ onToggleTheme, isDark }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  if (loading) {
+    return (
+      <div style={{ 
+        height: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        backgroundColor: 'var(--bg)',
+        color: 'var(--text)'
+      }}>
+        <div className="spinner" style={{ width: '40px', height: '40px', borderWidth: '3px' }}></div>
+      </div>
+    );
+  }
 
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
 

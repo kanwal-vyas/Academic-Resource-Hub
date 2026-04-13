@@ -20,16 +20,19 @@ async function fetchBackendUser(token) {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Shared handler — called on session restore AND on auth state changes
   async function handleSession(session) {
     if (!session) {
       setUser(null);
+      setLoading(false);
       return;
     }
 
     const backendUser = await fetchBackendUser(session.access_token);
-    setUser(backendUser); // null if fetch failed — components must handle this
+    setUser(backendUser);
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -79,7 +82,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, sendPasswordResetEmail, updateUserPassword }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, sendPasswordResetEmail, updateUserPassword }}>
       {children}
     </AuthContext.Provider>
   );
