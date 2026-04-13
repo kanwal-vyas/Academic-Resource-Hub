@@ -552,90 +552,142 @@ function ResourceCard({
     resource.content_type === "external_link" ? "External Link" : "File";
 
   return (
-    <article className={`card resource-card ${isSelected ? "selected" : ""}`}>
+    <article className={`card resource-card ${isSelected ? "selected" : ""} ${badgeClass ? `stripe-${resource.resource_type}` : ''}`}>
+      <div className="resource-stripe"></div>
+      
       <header className="resource-header">
-        <h3>{resource.title}</h3>
-        <div className="chips">
-          {badgeClass ? (
-            <span className={`resource-badge ${badgeClass}`}>
-              {resourceType.label}
+        <div className="resource-title-group">
+          <h3 className="resource-title">{resource.title}</h3>
+          <div className="resource-chips">
+            {badgeClass ? (
+              <span className={`resource-badge ${badgeClass}`}>
+                {resourceType.label}
+              </span>
+            ) : (
+              <span className={`chip ${resourceType.className}`}>
+                {resourceType.label}
+              </span>
+            )}
+            <span className={`resource-badge ${contentTypeClass}`}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+                {resource.content_type === "external_link" ? (
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />
+                ) : (
+                  <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM13 2v7h7" />
+                )}
+              </svg>
+              {contentTypeLabel}
             </span>
-          ) : (
-            <span className={`chip ${resourceType.className}`}>
-              {resourceType.label}
-            </span>
-          )}
-          <span className={`resource-badge ${contentTypeClass}`}>
-            {contentTypeLabel}
-          </span>
-          <span className="chip chip-year">{resource.start_year}</span>
-          {resource.is_verified === false && (
-            <span
-              className="resource-badge resource-badge--unverified"
-              title="Pending admin verification — content may be unreviewed"
-            >
-              ⚠ Unverified
-            </span>
-          )}
+          </div>
         </div>
+
+        {resource.is_verified === false && (
+          <span
+            className="resource-badge resource-badge--unverified"
+            title="Pending admin verification"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01" />
+            </svg>
+            Unverified
+          </span>
+        )}
       </header>
 
       <p className="resource-description">
         {resource.description || "No description provided."}
       </p>
 
-      <footer className="resource-meta">
-        <div className="meta-left">
-          <span className="meta-item">📘 {resource.subject_name}</span>
-          {resource.faculty_name && (
-            <span className="meta-item">
-              🎓 Taught by {resource.faculty_name}
-            </span>
-          )}
-          {resource.unit_number && (
-            <span className="meta-item">📑 Unit {resource.unit_number}</span>
-          )}
+      <div className="resource-metadata-grid">
+        <div className="meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20M4 19.5V5A2.5 2.5 0 0 1 6.5 2.5H20v14.5" />
+          </svg>
+          <span>{resource.subject_name}</span>
         </div>
-        <div className="meta-right">
-          <span className="meta-item">{contributorTypeFormatted}</span>
+        {resource.faculty_name && (
+          <div className="meta-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5zM6 12v5c3 3 9 3 12 0v-5" />
+            </svg>
+            <span>{resource.faculty_name}</span>
+          </div>
+        )}
+        <div className="meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          <span>AY {resource.start_year}</span>
+        </div>
+        {resource.unit_number && (
+          <div className="meta-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+            <span>Unit {resource.unit_number}</span>
+          </div>
+        )}
+      </div>
+
+      <footer className="resource-footer">
+        <div className="contributor-info">
+          <span className="contributor-label">{contributorTypeFormatted}</span>
           {resource.contributor_is_verified ? (
             <span className="verified-badge" title="Verified Contributor">
-              ✔ Verified
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Verified
             </span>
           ) : (
-            <span className="unverified-badge" title="Unverified Contributor">
-              Unverified
-            </span>
+            <span className="unverified-badge">Partially Verified</span>
+          )}
+        </div>
+
+        <div className="resource-actions">
+          <button
+            className="resource-action-primary"
+            onClick={() => onView(resource)}
+            aria-label={`View ${resource.title}`}
+          >
+            {isSelected ? "Opened" : "View Resource"}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '8px' }}>
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />
+            </svg>
+          </button>
+
+          {canModify && (
+            <div className="owner-menu">
+              <button
+                className="owner-action edit"
+                onClick={onEdit}
+                title="Edit Resource"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                </svg>
+              </button>
+              <button
+                className="owner-action delete"
+                onClick={onDelete}
+                title="Delete Resource"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
+              </button>
+            </div>
           )}
         </div>
       </footer>
-
-      <button
-        className="resource-action"
-        onClick={() => onView(resource)}
-        aria-label={`View ${resource.title}`}
-      >
-        {isSelected ? "Opened ✓" : "View Resource"}
-      </button>
-
-      {canModify && (
-        <div className="resource-owner-actions">
-          <button
-            className="resource-action-edit"
-            onClick={onEdit}
-            aria-label={`Edit ${resource.title}`}
-          >
-            Edit
-          </button>
-          <button
-            className="resource-action-delete"
-            onClick={onDelete}
-            aria-label={`Delete ${resource.title}`}
-          >
-            Delete
-          </button>
-        </div>
-      )}
     </article>
   );
 }

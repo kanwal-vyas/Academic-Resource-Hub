@@ -153,232 +153,261 @@
    =============================== */
 .resource-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: var(--space-lg);
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: var(--space-xl);
 }
 
 .resource-card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
-  transition: all var(--transition-slow);
+  padding: var(--space-xl);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 100%;
+}
+
+.resource-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-xl);
+  border-color: var(--accent-light);
 }
 
 .resource-card.selected {
   border-color: var(--accent);
-  box-shadow: var(--shadow-xl);
-  transform: translateY(-4px);
+  box-shadow: 0 0 0 2px var(--accent-light);
 }
 
+/* Resource Stripe Branding */
+.resource-stripe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background-color: var(--border-dark);
+  transition: width 0.3s ease;
+}
+
+.resource-card:hover .resource-stripe {
+  width: 6px;
+}
+
+/* Color Coded Stripes */
+.stripe-lecture_notes .resource-stripe { background-color: #2d6a4f; }
+.stripe-question_paper .resource-stripe { background-color: #db2777; }
+.stripe-research_paper .resource-stripe { background-color: #d97706; }
+.stripe-project_material .resource-stripe { background-color: #eab308; }
+.stripe-notes .resource-stripe { background-color: #6b8e7f; }
+
+/* Resource Header */
 .resource-header {
+  margin-bottom: var(--space-md);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--space-md);
 }
 
-.resource-header h3 {
+.resource-title-group {
+  flex: 1;
+}
+
+.resource-title {
   font-size: 1.125rem;
   font-weight: 700;
   color: var(--primary);
-  margin: 0;
-  flex: 1;
+  margin: 0 0 var(--space-xs);
   line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+.resource-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .resource-description {
-  margin: 0;
   font-size: 0.9375rem;
   line-height: 1.6;
   color: var(--text-secondary);
+  margin-bottom: var(--space-lg);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex-grow: 1;
 }
 
-.resource-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: var(--space-md);
-  padding-top: var(--space-md);
-  border-top: 1px solid var(--border);
-}
-
-.meta-left {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
-
-.meta-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--space-xs);
-  flex-shrink: 0;
+/* Metadata Grid */
+.resource-metadata-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md);
+  background-color: var(--surface-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
 }
 
 .meta-item {
-  font-size: 0.8125rem;
-  color: var(--text-secondary);
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
-}
-
-.meta-sub {
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-}
-
-.resource-action {
-  margin-top: var(--space-md);
-  padding: var(--space-md) var(--space-xl);
-  border-radius: var(--radius-md);
-  border: none;
-  background-color: var(--accent);
-  color: var(--surface);
-  font-weight: 600;
-  font-size: 0.9375rem;
-  cursor: pointer;
-  transition: all var(--transition-base);
-  box-shadow: var(--shadow-sm);
-}
-
-.resource-action:hover {
-  background-color: var(--primary);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.resource-action:active {
-  transform: translateY(0);
-  box-shadow: var(--shadow-sm);
-}
-
-/* ===============================
-   Owner Action Buttons (Edit / Delete)
-   =============================== */
-.resource-owner-actions {
-  display: flex;
-  gap: var(--space-sm);
-  margin-top: var(--space-xs);
-}
-
-.resource-action-edit,
-.resource-action-delete {
-  flex: 1;
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
+  gap: 8px;
   font-size: 0.8125rem;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all var(--transition-base);
-  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Edit — blue/interaction tone */
-.resource-action-edit {
-  background-color: transparent;
+.meta-item svg {
   color: var(--interaction);
-  border: 1.5px solid var(--interaction);
+  opacity: 0.8;
+  flex-shrink: 0;
 }
 
-.resource-action-edit:hover {
-  background-color: var(--interaction);
-  color: #fff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(93, 122, 153, 0.35);
+/* Resource Footer */
+.resource-footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-top: auto;
 }
 
-.resource-action-edit:active {
-  transform: translateY(0);
-  box-shadow: none;
-}
-
-/* Delete — danger red */
-.resource-action-delete {
-  background-color: transparent;
-  color: #e05252;
-  border: 1.5px solid #e05252;
-}
-
-.resource-action-delete:hover {
-  background-color: #e05252;
-  color: #fff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(224, 82, 82, 0.35);
-}
-
-.resource-action-delete:active {
-  transform: translateY(0);
-  box-shadow: none;
-}
-
-/* Dark mode variants */
-.dark .resource-action-edit {
-  color: #819cb8;
-  border-color: #819cb8;
-}
-
-.dark .resource-action-edit:hover {
-  background-color: rgba(129, 156, 184, 0.2);
-  color: #a8c4d8;
-  border-color: #a8c4d8;
-  box-shadow: 0 4px 12px rgba(129, 156, 184, 0.2);
-}
-
-.dark .resource-action-delete {
-  color: #f08080;
-  border-color: #f08080;
-}
-
-.dark .resource-action-delete:hover {
-  background-color: rgba(240, 128, 128, 0.15);
-  color: #f5a0a0;
-  border-color: #f5a0a0;
-  box-shadow: 0 4px 12px rgba(240, 128, 128, 0.2);
-}
-
-/* ===============================
-   Contributor Badges
-   =============================== */
-.verified-badge {
-  display: inline-flex;
+.contributor-info {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 2px;
-  margin-left: 6px;
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--border);
+}
+
+.contributor-label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #2f855a;
-  background-color: #f0fff4;
-  border: 1px solid #9ae6b4;
-  border-radius: 999px;
-  padding: 1px 8px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.verified-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #059669;
+  background-color: #ecfdf5;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
 }
 
 .unverified-badge {
-  display: inline-flex;
-  align-items: center;
-  margin-left: 6px;
   font-size: 0.75rem;
   font-weight: 500;
-  color: #975a16;
+  color: #b45309;
   background-color: #fffbeb;
-  border: 1px solid #f6e05e;
-  border-radius: 999px;
-  padding: 1px 8px;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+}
+
+/* Actions */
+.resource-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.resource-action-primary {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px var(--space-md);
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+.resource-action-primary:hover {
+  background-color: var(--primary);
+  transform: scale(1.02);
+}
+
+.owner-menu {
+  display: flex;
+  gap: 4px;
+}
+
+.owner-action {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background-color: var(--surface-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.owner-action.edit:hover {
+  color: var(--interaction);
+  border-color: var(--interaction);
+  background-color: white;
+}
+
+.owner-action.delete:hover {
+  color: #dc2626;
+  border-color: #dc2626;
+  background-color: white;
+}
+
+/* Badges */
+.resource-badge {
+  display: flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.resource-badge--unverified {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fee2e2;
+}
+
+/* Dark Mode Overrides */
+.dark .resource-card {
+  background: #111827;
+}
+
+.dark .resource-metadata-grid {
+  background-color: #1a2235;
 }
 
 .dark .verified-badge {
-  color: #9ae6b4;
-  background-color: rgba(154, 230, 180, 0.1);
-  border-color: rgba(154, 230, 180, 0.3);
+  background-color: rgba(16, 185, 129, 0.1);
 }
 
 .dark .unverified-badge {
-  color: #f6e05e;
-  background-color: rgba(246, 224, 94, 0.1);
-  border-color: rgba(246, 224, 94, 0.3);
+  background-color: rgba(245, 158, 11, 0.1);
 }
 
 /* ===============================
@@ -465,11 +494,11 @@
   border-color: #b2d8bc;
 }
 
-/* Question Paper — soft purple */
+/* Question Paper — light pastel pink */
 .resource-badge--purple {
-  background-color: #f4eeff;
-  color: #5c3d8f;
-  border-color: #cdb8ea;
+  background-color: #fff1f2;
+  color: #db2777;
+  border-color: #fecdd3;
 }
 
 /* Research Paper — soft orange */
@@ -493,11 +522,11 @@
   border-color: #d1d5db;
 }
 
-/* External Link — accent green */
+/* External Link — pastel purple */
 .resource-badge--link {
-  background-color: #eef5f1;
-  color: #6b8e7f;
-  border-color: #a8c4b5;
+  background-color: #f5f3ff;
+  color: #7c3aed;
+  border-color: #ddd6fe;
 }
 
 /* File Upload — interaction blue */
@@ -515,9 +544,9 @@
 }
 
 .dark .resource-badge--purple {
-  background-color: rgba(92, 61, 143, 0.15);
-  color: #b49ee0;
-  border-color: rgba(180, 158, 224, 0.3);
+  background-color: rgba(219, 39, 119, 0.15);
+  color: #f472b6;
+  border-color: rgba(244, 114, 182, 0.3);
 }
 
 .dark .resource-badge--orange {
@@ -540,9 +569,9 @@
 
 /* Dark mode — content type */
 .dark .resource-badge--link {
-  background-color: rgba(107, 142, 127, 0.15);
-  color: #a8c4b5;
-  border-color: rgba(168, 196, 181, 0.3);
+  background-color: rgba(124, 58, 237, 0.15);
+  color: #a78bfa;
+  border-color: rgba(167, 139, 250, 0.3);
 }
 
 .dark .resource-badge--file {

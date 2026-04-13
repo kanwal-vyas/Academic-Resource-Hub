@@ -381,9 +381,6 @@ function FacultyProfile() {
                           {isExpanded && canExpand && (
                             <div className="fp-availability-details">
                               <p>{details}</p>
-                              <div className="fp-contact-notice">
-                                ℹ️ Interested? Kindly contact the faculty directly.
-                              </div>
                             </div>
                           )}
                         </div>
