@@ -59,7 +59,7 @@ function useLatestResources(user) {
       }
 
       const result = await response.json();
-      
+
       // Get latest 3 resources sorted by created_at DESC
       const latest = result.data
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
@@ -184,9 +184,9 @@ function Home() {
 
           {loading && <LoadingState />}
           {error && <ErrorState message={error} />}
-          
+
           {!loading && !error && resources.length === 0 && <EmptyState />}
-          
+
           {!loading && !error && resources.length > 0 && (
             <>
               <div className="resource-list">
@@ -225,11 +225,11 @@ function Home() {
 // Resource Components
 // ===============================
 const typeClassMap = {
-  lecture_notes:    "resource-badge--fgreen",
-  question_paper:   "resource-badge--purple",
-  research_paper:   "resource-badge--orange",
+  lecture_notes: "resource-badge--fgreen",
+  question_paper: "resource-badge--purple",
+  research_paper: "resource-badge--orange",
   project_material: "resource-badge--yellow",
-  other:            "resource-badge--grey",
+  other: "resource-badge--grey",
 };
 
 function ResourceCard({ resource, isSelected, onView }) {

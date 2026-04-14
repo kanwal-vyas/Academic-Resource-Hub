@@ -33,8 +33,8 @@ function FacultyCard({ faculty }) {
       {availability.length > 0 && (
         <div className="chips">
           {availability.map((label) => (
-            <span 
-              key={label} 
+            <span
+              key={label}
               className={`chip ${label === "Interns" ? "chip-interns" : ""}`}
             >
               {label === "Interns" && <span className="status-dot"></span>}

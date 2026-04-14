@@ -60,14 +60,15 @@ body {
    App-level Typography (SCOPED)
    =============================== */
 
-   .main-content {
+.main-content {
   min-height: calc(100vh - 72px);
 }
+
 .app p {
   font-weight: 400;
 }
 
-   .app h1 {
+.app h1 {
   color: var(--primary);
   font-size: 2rem;
   font-weight: 700;
@@ -162,12 +163,10 @@ button:focus-visible {
    =============================== */
 .divider {
   height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--border),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      var(--border),
+      transparent);
   margin: var(--space-lg) 0;
 }
 
