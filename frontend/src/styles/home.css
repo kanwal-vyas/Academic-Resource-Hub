@@ -180,6 +180,58 @@
 }
 
 /* ===============================
+   View All Button
+   =============================== */
+.view-all-container {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-2xl);
+}
+
+.view-all-button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 1rem 2.5rem;
+  background-color: var(--surface);
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+}
+
+.view-all-button svg {
+  transition: transform 0.3s ease;
+}
+
+.view-all-button:hover {
+  background-color: var(--accent);
+  color: var(--surface);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 20px -10px var(--accent);
+}
+
+.view-all-button:hover svg {
+  transform: translateX(5px);
+}
+
+.view-all-button:active {
+  transform: translateY(-1px) scale(1.01);
+}
+
+.dark .view-all-button {
+  background-color: rgba(16, 185, 129, 0.05);
+}
+
+.dark .view-all-button:hover {
+  background-color: var(--accent);
+}
+
+/* ===============================
    Contributor Badges
    =============================== */
 .verified-badge {
@@ -239,6 +291,53 @@
   color: var(--text-secondary);
   font-weight: 500;
   white-space: nowrap;
+}
+
+.chip-interns {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.3);
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.1);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #10b981;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 8px #10b981;
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.dark .chip-interns {
+  background: rgba(52, 211, 153, 0.1);
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+.dark .status-dot {
+  background-color: #34d399;
+  box-shadow: 0 0 8px #34d399;
 }
 
 .chip-type {
@@ -382,6 +481,15 @@
   align-items: center;
   text-align: center;
   gap: var(--space-md);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--border);
+}
+
+.faculty-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
+              0 0 15px var(--accent-light);
 }
 
 .faculty-avatar {

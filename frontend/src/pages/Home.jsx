@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../auth/AuthContext";
 import FacultyCard from "../components/FacultyCard";
@@ -188,16 +188,27 @@ function Home() {
           {!loading && !error && resources.length === 0 && <EmptyState />}
           
           {!loading && !error && resources.length > 0 && (
-            <div className="resource-list">
-              {resources.map((resource) => (
-                <ResourceCard
-                  key={resource.id}
-                  resource={resource}
-                  isSelected={selectedResourceId === resource.id}
-                  onView={handleViewResource}
-                />
-              ))}
-            </div>
+            <>
+              <div className="resource-list">
+                {resources.map((resource) => (
+                  <ResourceCard
+                    key={resource.id}
+                    resource={resource}
+                    isSelected={selectedResourceId === resource.id}
+                    onView={handleViewResource}
+                  />
+                ))}
+              </div>
+              <div className="view-all-container">
+                <Link to="/browse" className="view-all-button">
+                  View All Resources
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </Link>
+              </div>
+            </>
           )}
         </section>
 

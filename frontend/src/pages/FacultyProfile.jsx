@@ -361,6 +361,8 @@ function FacultyProfile() {
                         <div key={key} className="fp-availability-item">
                           <span
                             className={`fp-availability-badge fp-badge--open ${
+                              label === "Internships" ? "chip-interns" : ""
+                            } ${
                               canExpand ? "fp-badge--clickable" : ""
                             }`}
                             onClick={() => {
@@ -369,7 +371,11 @@ function FacultyProfile() {
                               }
                             }}
                           >
-                            <span className="fp-badge-icon">{icon}</span>
+                            {label === "Internships" ? (
+                              <span className="status-dot"></span>
+                            ) : (
+                              <span className="fp-badge-icon">{icon}</span>
+                            )}
                             {label}
                             {canExpand && (
                               <span className="fp-badge-arrow">
