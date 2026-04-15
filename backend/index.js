@@ -1,6 +1,8 @@
 import dotenv from "dotenv";
 dotenv.config();
 import express from 'express';
+import { createServer } from 'http';
+import { initSocketIO } from './socket.js';
 import Busboy from 'busboy';
 import { createClient } from '@supabase/supabase-js';
 import pool from './db.js'
@@ -10,7 +12,14 @@ import meRouter from "./routes/me.js";
 import facultyRoutes from './routes/facultyRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+
 const app = express();
+const httpServer = createServer(app);
+
+// ============================================================================
+// SOCKET.IO SETUP
+// ============================================================================
+initSocketIO(httpServer);
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -99,7 +108,7 @@ function generateStoragePath(subjectId, offeringId, unitId, filename) {
 // ============================================================================
 
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:5100"],
+  origin: ["http://localhost:5173", "http://localhost:5100"],
   credentials: true
 }));
 
@@ -703,8 +712,9 @@ app.use((err, req, res, next) => {
 // ============================================================================
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`[Socket.IO] WebSocket server ready on port ${PORT}`);
 });
 
 export default app;

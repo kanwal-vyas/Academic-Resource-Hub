@@ -1,5 +1,6 @@
 import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import NotificationBell from "./NotificationBell";
 import "../styles/navbar.css";
 
 function Navbar({ isDark, onToggleTheme, toggleSidebar }) {
@@ -34,6 +35,8 @@ function Navbar({ isDark, onToggleTheme, toggleSidebar }) {
         </div>
 
         <div className="header-right">
+          <NotificationBell />
+
           <button
             className="header-button button-theme"
             onClick={onToggleTheme}
@@ -55,4 +58,4 @@ function Navbar({ isDark, onToggleTheme, toggleSidebar }) {
   );
 }
 
-export default Navbar;
+export default Navbar;

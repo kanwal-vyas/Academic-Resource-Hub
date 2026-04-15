@@ -49,7 +49,63 @@
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--primary);
-  margin: 0 0 var(--space-lg);
+  margin: 0;
+}
+
+/* Search Bar */
+.search-bar-container {
+  position: relative;
+  flex: 1 1 300px;
+  max-width: 500px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.search-bar {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border);
+  background-color: var(--surface);
+  color: var(--text);
+  font-size: 0.95rem;
+  transition: all var(--transition-base);
+  outline: none;
+  box-shadow: var(--shadow-sm);
+  font-family: inherit;
+}
+
+.search-bar::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.search-bar:hover {
+  border-color: var(--border-dark);
+}
+
+.search-bar:focus {
+  background-color: var(--surface);
+  border-color: var(--interaction);
+  box-shadow: 0 0 0 4px var(--interaction-light);
+}
+
+.dark .search-bar {
+  background-color: rgba(15, 23, 42, 0.4);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .search-bar:focus {
+  background-color: rgba(15, 23, 42, 0.6);
+  border-color: var(--interaction);
 }
 
 .filter-grid {
