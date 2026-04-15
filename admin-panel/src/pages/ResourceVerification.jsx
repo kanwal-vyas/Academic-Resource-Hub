@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import Sidebar from '../components/Sidebar';
+import ConfirmModal from '../components/ConfirmModal';
 import '../styles/admin.css';
 import '../styles/resource-verify.css';
 
@@ -23,18 +24,27 @@ export default function ResourceVerification() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
   const [actionId, setActionId] = useState(null);
+  const [confirmConfig, setConfirmConfig] = useState({ isOpen: false });
 
   const showToast = (msg, type = 'success') => { setToast({ msg, type }); setTimeout(() => setToast(null), 3500); };
 
   const load = useCallback(async () => {
-    setLoading(true);
-    const endpoint = tab === 'pending' ? '/resources/pending' : '/resources/all';
-    const res = await api(endpoint);
-    if (res.ok) setResources((await res.json()).data);
-    setLoading(false);
-  }, [tab]);
+    // Only show full page spinner on initial load or tag switch
+    const isInitialLoadForTab = resources.length === 0;
+    if (isInitialLoadForTab) setLoading(true);
 
-  useEffect(() => { load(); }, [load]);
+    try {
+      const endpoint = tab === 'pending' ? '/resources/pending' : '/resources/all';
+      const res = await api(endpoint);
+      if (res.ok) setResources((await res.json()).data);
+    } catch (err) {
+      console.error('Failed to load resources:', err);
+    } finally {
+      if (isInitialLoadForTab) setLoading(false);
+    }
+  }, [tab, resources.length]);
+
+  useEffect(() => { load(); }, [tab]); // Run when tab changes
 
   const handleVerify = async (id) => {
     setActionId(id);
@@ -44,13 +54,21 @@ export default function ResourceVerification() {
     else { const d = await res.json(); showToast(d.error || 'Failed', 'error'); }
   };
 
-  const handleDelete = async (id, title) => {
-    if (!window.confirm(`Delete "${title}"? This is irreversible.`)) return;
-    setActionId(id);
-    const res = await api(`/resources/${id}`, { method: 'DELETE' });
-    setActionId(null);
-    if (res.ok) { showToast('🗑 Resource deleted'); load(); }
-    else { const d = await res.json(); showToast(d.error || 'Failed', 'error'); }
+  const handleDelete = (id, title) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Delete Resource',
+      message: `Are you sure you want to delete "${title}"? This is irreversible.`,
+      confirmText: '🗑 Delete',
+      type: 'danger',
+      onConfirm: async () => {
+        setConfirmConfig(prev => ({ ...prev, isLoading: true }));
+        const res = await api(`/resources/${id}`, { method: 'DELETE' });
+        setConfirmConfig({ isOpen: false });
+        if (res.ok) { showToast('🗑 Resource deleted'); load(); }
+        else { const d = await res.json(); showToast(d.error || 'Failed', 'error'); }
+      }
+    });
   };
 
   const pending = tab === 'pending' ? resources : resources.filter(r => !r.is_verified);
@@ -165,6 +183,17 @@ export default function ResourceVerification() {
       </main>
 
       {toast && <div className={`cm-toast cm-toast--${toast.type}`}>{toast.msg}</div>}
+
+      <ConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig({ isOpen: false })}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmText={confirmConfig.confirmText}
+        type={confirmConfig.type}
+        isLoading={confirmConfig.isLoading}
+      />
     </div>
   );
 }

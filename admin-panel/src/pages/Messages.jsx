@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import Sidebar from '../components/Sidebar';
+import ConfirmModal from '../components/ConfirmModal';
 import '../styles/admin.css';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -22,6 +23,7 @@ export default function Messages() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [filter, setFilter] = useState('all'); // 'all' | 'unread' | 'read'
+  const [confirmConfig, setConfirmConfig] = useState({ isOpen: false });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -38,13 +40,23 @@ export default function Messages() {
     if (selected?.id === id) setSelected(prev => ({ ...prev, is_read: true }));
   };
 
-  const deleteMsg = async (id) => {
-    if (!window.confirm('Delete this message permanently?')) return;
-    const res = await api(`/messages/${id}`, { method: 'DELETE' });
-    if (res.ok) {
-      setMessages(prev => prev.filter(m => m.id !== id));
-      if (selected?.id === id) setSelected(null);
-    }
+  const deleteMsg = (id) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Delete Message',
+      message: 'Are you sure you want to delete this contact message? This action is irreversible.',
+      confirmText: '🗑 Delete',
+      type: 'danger',
+      onConfirm: async () => {
+        setConfirmConfig(prev => ({ ...prev, isLoading: true }));
+        const res = await api(`/messages/${id}`, { method: 'DELETE' });
+        setConfirmConfig({ isOpen: false });
+        if (res.ok) {
+          setMessages(prev => prev.filter(m => m.id !== id));
+          if (selected?.id === id) setSelected(null);
+        }
+      }
+    });
   };
 
   const openMessage = (msg) => {
@@ -248,6 +260,17 @@ export default function Messages() {
           </div>
         </div>
       )}
+
+      <ConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig({ isOpen: false })}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmText={confirmConfig.confirmText}
+        type={confirmConfig.type}
+        isLoading={confirmConfig.isLoading}
+      />
     </div>
   );
 }

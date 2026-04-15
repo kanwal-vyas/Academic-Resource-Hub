@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 import AdminLogin from './pages/AdminLogin';
@@ -10,8 +11,14 @@ import Messages from './pages/Messages';
 
 function AdminRoute({ children }) {
   const { user, loading } = useAuth();
+  const [hasLoaded, setHasLoaded] = useState(false);
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading) setHasLoaded(true);
+  }, [loading]);
+
+  // Only show the heavy blocking overlay on the VERY first load
+  if (!hasLoaded && loading) {
     return (
       <div style={{
         position: 'fixed', inset: 0,
@@ -37,8 +44,11 @@ function AdminRoute({ children }) {
     );
   }
 
+  if (!user || user.role !== 'admin') {
+    if (!loading) return <Navigate to="/login" replace />;
+    return null; // Don't redirect while still loading for the first time
+  }
 
-  if (!user || user.role !== 'admin') return <Navigate to="/login" replace />;
   return children;
 }
 

@@ -372,13 +372,41 @@ router.put('/resources/:id/verify', authMiddleware, adminOnly, async (req, res) 
 
 router.delete('/resources/:id', authMiddleware, adminOnly, async (req, res) => {
   const { id } = req.params;
+  const client = await pool.connect();
   try {
-    const result = await pool.query(`DELETE FROM resources WHERE id = $1 RETURNING id`, [id]);
-    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Resource not found' });
+    // 1. Fetch resource to check for storage file
+    const fetchResult = await client.query('SELECT storage_path, content_type FROM resources WHERE id = $1', [id]);
+    if (fetchResult.rows.length === 0) return res.status(404).json({ success: false, error: 'Resource not found' });
+    
+    const resource = fetchResult.rows[0];
+    await client.query('BEGIN');
+
+    // 2. Delete from Supabase Storage if applicable
+    if (resource.content_type === 'file' && resource.storage_path) {
+      const { error: storageError } = await supabase.storage
+        .from('resources')
+        .remove([resource.storage_path]);
+      if (storageError) {
+        console.error('Admin delete: Storage cleanup failed (non-fatal):', storageError.message);
+      }
+    }
+
+    // 3. Delete from Database
+    const result = await client.query(`DELETE FROM resources WHERE id = $1 RETURNING id`, [id]);
+    
+    if (result.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, error: 'Resource not found' });
+    }
+
+    await client.query('COMMIT');
     res.json({ success: true });
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('Error deleting resource:', err);
     res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
   }
 });
 

@@ -70,20 +70,20 @@ async function resolveUnit(subjectOfferingId, unitNumber) {
   return result.rows[0].id;
 }
 
-async function isAdmin(userId) {
-  const result = await pool.query(
+async function isAdmin(userId, client = pool) {
+  const result = await client.query(
     'SELECT role FROM users WHERE id = $1',
     [userId]
   );
   return result.rows.length > 0 && result.rows[0].role === 'admin';
 }
 
-async function isResourceOwner(resourceId, userId) {
-  const result = await pool.query(
+async function isResourceOwner(resourceId, userId, client = pool) {
+  const result = await client.query(
     'SELECT contributor_id FROM resources WHERE id = $1',
     [resourceId]
   );
-  return result.rows.length > 0 && result.rows[0].contributor_id === userId;
+  return result.rows.length > 0 && String(result.rows[0].contributor_id) === String(userId);
 }
 
 function generateStoragePath(subjectId, offeringId, unitId, filename) {
@@ -575,8 +575,8 @@ app.put('/resources/:id', authMiddleware, async (req, res) => {
       external_url, subject_code, start_year, end_year, unit_number 
     } = req.body;
 
-    const userIsAdmin = await isAdmin(req.user.id);
-    const userIsOwner = await isResourceOwner(id, req.user.id);
+    const userIsAdmin = await isAdmin(req.user.id, client);
+    const userIsOwner = await isResourceOwner(id, req.user.id, client);
 
     if (!userIsAdmin && !userIsOwner) {
       return res.status(403).json({ success: false, error: 'You do not have permission to update this resource' });
@@ -762,8 +762,10 @@ app.delete('/resources/:id', authMiddleware, async (req, res) => {
   const client = await pool.connect();
   try {
     const { id } = req.params;
-    const userIsAdmin = await isAdmin(req.user.id);
-    const userIsOwner = await isResourceOwner(id, req.user.id);
+    
+    // Pass 'client' to helpers to prevent pool deadlock
+    const userIsAdmin = await isAdmin(req.user.id, client);
+    const userIsOwner = await isResourceOwner(id, req.user.id, client);
 
     if (!userIsAdmin && !userIsOwner) {
       return res.status(403).json({ success: false, error: 'Permission denied' });

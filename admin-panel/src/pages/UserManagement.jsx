@@ -17,6 +17,8 @@ async function api(path, options = {}) {
   });
 }
 
+import ConfirmModal from '../components/ConfirmModal';
+
 const ROLE_CONFIG = {
   admin: { label: 'Admin', cls: 'ur-role--admin' },
   faculty: { label: 'Faculty', cls: 'ur-role--faculty' },
@@ -29,15 +31,39 @@ export default function UserManagement() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [selectedUser, setSelectedUser] = useState(null);
+  const [confirmConfig, setConfirmConfig] = useState({ isOpen: false });
 
   const load = useCallback(async () => {
-    setLoading(true);
-    const res = await api('/users');
-    if (res.ok) setUsers((await res.json()).data);
-    setLoading(false);
-  }, []);
+    if (users.length === 0) setLoading(true);
+    try {
+      const res = await api('/users');
+      if (res.ok) {
+        const data = (await res.json()).data;
+        setUsers(data);
+        
+        // Update selectedUser if it's currently open to keep details fresh
+        if (selectedUser) {
+          const updated = data.find(u => u.id === selectedUser.id);
+          if (updated) setSelectedUser(updated);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load users:', err);
+    } finally {
+      if (users.length === 0) setLoading(false);
+    }
+  }, [users.length, selectedUser]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { 
+    // Initial fetch only
+    const initialLoad = async () => {
+      setLoading(true);
+      const res = await api('/users');
+      if (res.ok) setUsers((await res.json()).data);
+      setLoading(false);
+    };
+    initialLoad(); 
+  }, []);
 
   const filtered = users.filter(u => {
     const matchRole = roleFilter === 'all' || u.role === roleFilter;
@@ -56,68 +82,74 @@ export default function UserManagement() {
     admin: users.filter(u => u.role === 'admin').length,
   };
 
-  const handleForceVerify = async (userId) => {
-    if (!window.confirm('Are you sure you want to force verify this user\'s email?')) return;
+  const handleActionExec = async (type, userId, endpoint, method = 'POST') => {
+    setConfirmConfig(prev => ({ ...prev, isLoading: true }));
     try {
-      const res = await api(`/users/${userId}/verify`, { method: 'POST' });
+      const res = await api(endpoint, { method });
       if (res.ok) {
-        setUsers(users.map(u => u.id === userId ? { ...u, is_verified: true } : u));
-        if (selectedUser?.id === userId) setSelectedUser(prev => ({ ...prev, is_verified: true }));
+        const isVerifiedUpdate = type === 'verify' ? true : type === 'unverify' ? false : null;
+        const isSuspendedUpdate = type === 'suspend' ? true : type === 'unsuspend' ? false : null;
+
+        setUsers(users.map(u => {
+          if (u.id !== userId) return u;
+          const updated = { ...u };
+          if (isVerifiedUpdate !== null) updated.is_verified = isVerifiedUpdate;
+          if (isSuspendedUpdate !== null) updated.is_suspended = isSuspendedUpdate;
+          return updated;
+        }));
+
+        if (selectedUser?.id === userId) {
+          setSelectedUser(prev => {
+            const updated = { ...prev };
+            if (isVerifiedUpdate !== null) updated.is_verified = isVerifiedUpdate;
+            if (isSuspendedUpdate !== null) updated.is_suspended = isSuspendedUpdate;
+            return updated;
+          });
+        }
+        setConfirmConfig({ isOpen: false });
       } else {
         const errorData = await res.json();
-        alert(errorData.error || 'Failed to verify user');
+        alert(errorData.error || 'Action failed');
       }
     } catch (err) {
-      alert('An error occurred while verifying the user');
+      alert('An error occurred');
+    } finally {
+      setConfirmConfig(prev => ({ ...prev, isLoading: false }));
     }
   };
 
-  const handleForceUnverify = async (userId) => {
-    if (!window.confirm('Are you sure you want to unverify this user?')) return;
-    try {
-      const res = await api(`/users/${userId}/unverify`, { method: 'POST' });
-      if (res.ok) {
-        setUsers(users.map(u => u.id === userId ? { ...u, is_verified: false } : u));
-        if (selectedUser?.id === userId) setSelectedUser(prev => ({ ...prev, is_verified: false }));
-      } else {
-        const errorData = await res.json();
-        alert(errorData.error || 'Failed to unverify user');
+  const openConfirm = (type, userId) => {
+    const configs = {
+      verify: {
+        title: 'Force Verify User',
+        message: 'Are you sure you want to force verify this user\'s email? They will gain full access immediately.',
+        confirmText: 'Verify User',
+        type: 'primary',
+        onConfirm: () => handleActionExec('verify', userId, `/users/${userId}/verify`)
+      },
+      unverify: {
+        title: 'Remove Verification',
+        message: 'This user will no longer be considered verified. They might be restricted from certain actions.',
+        confirmText: 'Unverify',
+        type: 'warning',
+        onConfirm: () => handleActionExec('unverify', userId, `/users/${userId}/unverify`)
+      },
+      suspend: {
+        title: 'Suspend Account',
+        message: 'This user will be blocked from logging in or accessing any platform resources. Proceed with caution.',
+        confirmText: 'Suspend User',
+        type: 'danger',
+        onConfirm: () => handleActionExec('suspend', userId, `/users/${userId}/suspend`)
+      },
+      unsuspend: {
+        title: 'Unsuspend Account',
+        message: 'Gives the user full access back to their account. They will be able to log in immediately.',
+        confirmText: 'Unsuspend User',
+        type: 'primary',
+        onConfirm: () => handleActionExec('unsuspend', userId, `/users/${userId}/unsuspend`)
       }
-    } catch (err) {
-      alert('An error occurred while unverifying the user');
-    }
-  };
-
-  const handleSuspend = async (userId) => {
-    if (!window.confirm('Are you sure you want to suspend this user? They will not be able to log in or access the platform.')) return;
-    try {
-      const res = await api(`/users/${userId}/suspend`, { method: 'POST' });
-      if (res.ok) {
-        setUsers(users.map(u => u.id === userId ? { ...u, is_suspended: true } : u));
-        if (selectedUser?.id === userId) setSelectedUser(prev => ({ ...prev, is_suspended: true }));
-      } else {
-        const errorData = await res.json();
-        alert(errorData.error || 'Failed to suspend user');
-      }
-    } catch (err) {
-      alert('An error occurred while suspending the user');
-    }
-  };
-
-  const handleUnsuspend = async (userId) => {
-    if (!window.confirm('Are you sure you want to unsuspend this user? They will regain full access.')) return;
-    try {
-      const res = await api(`/users/${userId}/unsuspend`, { method: 'POST' });
-      if (res.ok) {
-        setUsers(users.map(u => u.id === userId ? { ...u, is_suspended: false } : u));
-        if (selectedUser?.id === userId) setSelectedUser(prev => ({ ...prev, is_suspended: false }));
-      } else {
-        const errorData = await res.json();
-        alert(errorData.error || 'Failed to unsuspend user');
-      }
-    } catch (err) {
-      alert('An error occurred while unverifying the user');
-    }
+    };
+    setConfirmConfig({ ...configs[type], isOpen: true, isLoading: false });
   };
 
   return (
@@ -281,7 +313,7 @@ export default function UserManagement() {
               <div className="ur-modal-actions">
                 {selectedUser.is_verified ? (
                   <button
-                    onClick={() => handleForceUnverify(selectedUser.id)}
+                    onClick={() => openConfirm('unverify', selectedUser.id)}
                     className="ur-btn-unverify"
                     style={{ padding: '10px 14px', fontSize: '0.85rem', background: 'var(--warning-bg)', color: 'var(--warning)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 'var(--radius)', cursor: 'pointer', fontWeight: '600' }}
                   >
@@ -289,7 +321,7 @@ export default function UserManagement() {
                   </button>
                 ) : (
                   <button
-                    onClick={() => handleForceVerify(selectedUser.id)}
+                    onClick={() => openConfirm('verify', selectedUser.id)}
                     className="ur-btn-verify"
                     style={{ padding: '10px 14px', fontSize: '0.85rem', background: 'rgba(34,197,94,0.12)', color: 'var(--success)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 'var(--radius)', cursor: 'pointer', fontWeight: '600' }}
                   >
@@ -299,7 +331,7 @@ export default function UserManagement() {
 
                 {selectedUser.is_suspended ? (
                   <button
-                    onClick={() => handleUnsuspend(selectedUser.id)}
+                    onClick={() => openConfirm('unsuspend', selectedUser.id)}
                     className="ur-btn-verify"
                     style={{ padding: '10px 14px', fontSize: '0.85rem', background: 'rgba(34,197,94,0.12)', color: 'var(--success)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 'var(--radius)', cursor: 'pointer', fontWeight: '600' }}
                   >
@@ -307,7 +339,7 @@ export default function UserManagement() {
                   </button>
                 ) : (
                   <button
-                    onClick={() => handleSuspend(selectedUser.id)}
+                    onClick={() => openConfirm('suspend', selectedUser.id)}
                     className="ur-btn-unverify"
                     style={{ padding: '10px 14px', fontSize: '0.85rem', background: 'var(--danger-bg)', color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 'var(--radius)', cursor: 'pointer', fontWeight: '600' }}
                   >
@@ -319,6 +351,18 @@ export default function UserManagement() {
           </div>
         </div>
       )}
+
+      {/* Premium Confirm Modal */}
+      <ConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig({ isOpen: false })}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmText={confirmConfig.confirmText}
+        type={confirmConfig.type}
+        isLoading={confirmConfig.isLoading}
+      />
     </div>
   );
 }

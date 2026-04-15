@@ -63,11 +63,11 @@ function CoursesTab() {
   const showToast = (msg, type = 'success') => { setToast({ msg, type }); setTimeout(() => setToast(null), 3500); };
 
   const load = useCallback(async () => {
-    setLoading(true);
+    if (courses.length === 0) setLoading(true);
     const res = await api('/courses');
     if (res.ok) setCourses((await res.json()).data);
     setLoading(false);
-  }, []);
+  }, [courses.length]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -160,7 +160,7 @@ function SubjectsTab() {
   const showToast = (msg, type = 'success') => { setToast({ msg, type }); setTimeout(() => setToast(null), 3500); };
 
   const load = useCallback(async () => {
-    setLoading(true);
+    if (subjects.length === 0) setLoading(true);
     const [sRes, cRes] = await Promise.all([
       api(`/subjects${filterCourse ? `?course_id=${filterCourse}` : ''}`),
       api('/courses'),
@@ -168,7 +168,7 @@ function SubjectsTab() {
     if (sRes.ok) setSubjects((await sRes.json()).data);
     if (cRes.ok) setCourses((await cRes.json()).data);
     setLoading(false);
-  }, [filterCourse]);
+  }, [filterCourse, subjects.length]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -261,7 +261,7 @@ function AcademicYearsTab() {
   const [form, setForm] = useState({ start_year: '', end_year: '' });
 
   const showToast = (msg, type = 'success') => { setToast({ msg, type }); setTimeout(() => setToast(null), 3500); };
-  const load = useCallback(async () => { setLoading(true); const res = await api('/academic-years'); if (res.ok) setYears((await res.json()).data); setLoading(false); }, []);
+  const load = useCallback(async () => { if (years.length === 0) setLoading(true); const res = await api('/academic-years'); if (res.ok) setYears((await res.json()).data); setLoading(false); }, [years.length]);
   useEffect(() => { load(); }, [load]);
 
   const handleAdd = async (e) => {
@@ -340,7 +340,7 @@ function OfferingsTab() {
   const showToast = (msg, type = 'success') => { setToast({ msg, type }); setTimeout(() => setToast(null), 3500); };
 
   const load = useCallback(async () => {
-    setLoading(true);
+    if (offerings.length === 0) setLoading(true);
     const [oRes, sRes, yRes, fRes] = await Promise.all([
       api('/subject-offerings'),
       api('/subjects'),
@@ -352,7 +352,7 @@ function OfferingsTab() {
     if (yRes.ok) setYears((await yRes.json()).data);
     if (fRes.ok) { const fd = await fRes.json(); setFaculty(fd.data || []); }
     setLoading(false);
-  }, []);
+  }, [offerings.length]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -449,7 +449,7 @@ function UnitsTab() {
   const showToast = (msg, type = 'success') => { setToast({ msg, type }); setTimeout(() => setToast(null), 3500); };
 
   const load = useCallback(async () => {
-    setLoading(true);
+    if (units.length === 0) setLoading(true);
     const [uRes, oRes] = await Promise.all([
       api(`/units${filterOffering ? `?offering_id=${filterOffering}` : ''}`),
       api('/subject-offerings'),
@@ -457,7 +457,7 @@ function UnitsTab() {
     if (uRes.ok) setUnits((await uRes.json()).data);
     if (oRes.ok) setOfferings((await oRes.json()).data);
     setLoading(false);
-  }, [filterOffering]);
+  }, [filterOffering, units.length]);
 
   useEffect(() => { load(); }, [load]);
 

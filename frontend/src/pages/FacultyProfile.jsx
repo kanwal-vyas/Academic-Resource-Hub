@@ -93,8 +93,8 @@ function FacultyProfile() {
         throw new Error("Failed to save profile");
       }
 
-      const updatedData = await response.json();
-      setFaculty({ ...faculty, ...updatedData });
+      const { data: updatedFaculty } = await response.json();
+      setFaculty({ ...faculty, ...updatedFaculty });
       setIsEditing(false);
     } catch (err) {
       console.error("Error saving profile:", err);
@@ -341,13 +341,16 @@ function FacultyProfile() {
                 {openItems.length === 0 ? (
                   /* ── Nothing available ── */
                   <div className="fp-unavailable-notice">
-                    <span className="fp-unavailable-icon">🔕</span>
+                    <span className="fp-unavailable-icon">{isOwner ? '💡' : '🔕'}</span>
                     <div>
                       <p className="fp-unavailable-title">
-                        Not accepting requests currently
+                        {isOwner ? 'Your availability is hidden' : 'Not accepting requests currently'}
                       </p>
                       <p className="fp-unavailable-sub">
-                        {faculty.full_name?.split(" ")[0] || "This faculty"} is not open for internships, research, or mentoring at the moment. Check back later.
+                        {isOwner 
+                          ? "You haven't marked yourself as open for internships, research, or mentoring. Click 'Edit Profile' above to update this."
+                          : `${faculty.full_name?.split(" ")[0] || "This faculty"} is not open for internships, research, or mentoring at the moment. Check back later.`
+                        }
                       </p>
                     </div>
                   </div>

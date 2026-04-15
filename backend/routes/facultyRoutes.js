@@ -19,7 +19,7 @@ router.get('/', authMiddleware, async (req, res) => {
         f.updated_at
       FROM users u
       JOIN faculty_profiles f ON u.id = f.user_id
-      WHERE u.role = 'faculty'
+      WHERE u.role = 'faculty' AND u.is_suspended = false
       ORDER BY f.updated_at DESC
     `);
     res.json({ success: true, data: result.rows });
@@ -44,9 +44,9 @@ router.get('/recent', authMiddleware, async (req, res) => {
         f.updated_at
       FROM users u
       JOIN faculty_profiles f ON u.id = f.user_id
-      WHERE u.role = 'faculty'
+      WHERE u.role = 'faculty' AND u.is_suspended = false
       ORDER BY f.updated_at DESC
-      LIMIT 2
+      LIMIT 3
     `);
     res.json({ success: true, data: result.rows });
   } catch (error) {
@@ -139,7 +139,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
         f.mentoring_details
       FROM users u
       LEFT JOIN faculty_profiles f ON u.id = f.user_id
-      WHERE u.id = $1 AND u.role = 'faculty'
+      WHERE u.id = $1 AND u.role = 'faculty' AND u.is_suspended = false
     `, [id]);
 
     if (result.rows.length === 0) {
