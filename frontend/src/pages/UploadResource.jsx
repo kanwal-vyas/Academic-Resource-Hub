@@ -99,16 +99,36 @@ async function updateFileResource(id, formData, token) {
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 
-function validateForm({ title, course, subject, academicYear, resourceType, visibility, contentType, externalLink, file, isEditMode }) {
+function validateForm({ 
+  title, course, subject, academicYear, resourceType, 
+  visibility, contentType, externalLink, file, 
+  isEditMode, otherType, originalContentType 
+}) {
   if (!title.trim())     return "Title is required";
   if (!course)           return "Please select a course";
   if (!subject)          return "Please select a subject";
   if (!academicYear)     return "Please select an academic year";
   if (!resourceType)     return "Please select a resource type";
+  
+  if (resourceType === "other" && !otherType?.trim()) {
+    return "Please specify the resource type";
+  }
+
   if (!visibility)       return "Please select visibility";
-  if (contentType === "link" && !externalLink.trim()) return "External link is required";
-  // In edit mode, file is optional (keep existing file if none selected)
-  if (contentType === "file" && !file && !isEditMode) return "Please select a PDF file";
+  
+  if (contentType === "link" && !externalLink.trim()) {
+    return "External link is required";
+  }
+
+  // FORCE FILE SELECTION if switching from Link to File
+  const switchingToFile = isEditMode && originalContentType === "external_link" && contentType === "file";
+  
+  if (contentType === "file" && !file) {
+    if (!isEditMode || switchingToFile) {
+      return "Please select a PDF file";
+    }
+  }
+
   return null;
 }
 
@@ -123,11 +143,13 @@ function UploadResource() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]           = useState("");
   const [loadingResource, setLoadingResource] = useState(isEditMode);
+  const [originalContentType, setOriginalContentType] = useState("");
 
   // Resource info
   const [title, setTitle]               = useState("");
   const [description, setDescription]   = useState("");
   const [resourceType, setResourceType] = useState("");
+  const [otherType, setOtherType]       = useState("");
   const [visibility, setVisibility]     = useState("");
 
   // Classification
@@ -187,15 +209,23 @@ function UploadResource() {
 
         setTitle(resource.title || "");
         setDescription(resource.description || "");
-        setResourceType(resource.resource_type || "");
+        const standardTypes = ["lecture_notes", "question_paper", "research_paper", "project_material"];
+        if (resource.resource_type && !standardTypes.includes(resource.resource_type)) {
+          setResourceType("other");
+          setOtherType(resource.resource_type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()));
+        } else {
+          setResourceType(resource.resource_type || "");
+        }
         setVisibility(resource.visibility || "");
 
         // content type
         if (resource.content_type === "external_link") {
           setContentType("link");
+          setOriginalContentType("external_link");
           setExternalLink(resource.external_url || "");
         } else {
           setContentType("file");
+          setOriginalContentType("file");
         }
 
         // Match academic year by start_year + end_year
@@ -314,6 +344,7 @@ function UploadResource() {
     const validationError = validateForm({
       title, course, subject, academicYear, resourceType,
       visibility, contentType, externalLink, file, isEditMode,
+      otherType, originalContentType
     });
     if (validationError) {
       setError(validationError);
@@ -330,6 +361,10 @@ function UploadResource() {
       const unit_number  = unit || undefined;
 
       if (contentType === "link") {
+        const finalResourceType = resourceType === "other" 
+          ? otherType.trim().toLowerCase().replace(/\s+/g, '_')
+          : resourceType;
+
         const payload = {
           title: title.trim(),
           description: description.trim() || "No description provided",
@@ -338,7 +373,7 @@ function UploadResource() {
           end_year,
           unit_number,
           external_url: externalLink.trim(),
-          resource_type: resourceType,
+          resource_type: finalResourceType,
           visibility,
         };
         if (isEditMode) {
@@ -347,6 +382,10 @@ function UploadResource() {
           await submitLinkResource(payload, token);
         }
       } else {
+        const finalResourceType = resourceType === "other" 
+          ? otherType.trim().toLowerCase().replace(/\s+/g, '_')
+          : resourceType;
+
         const formData = new FormData();
         if (file) formData.append("file", file);
         formData.append("title", title.trim());
@@ -354,7 +393,7 @@ function UploadResource() {
         formData.append("subject_code", subject_code);
         formData.append("start_year", start_year);
         formData.append("end_year", end_year);
-        formData.append("resource_type", resourceType);
+        formData.append("resource_type", finalResourceType);
         formData.append("visibility", visibility);
         if (unit_number) formData.append("unit_number", unit_number);
 
@@ -550,9 +589,26 @@ function UploadResource() {
                   <option value="question_paper">Question Paper</option>
                   <option value="research_paper">Research Paper</option>
                   <option value="project_material">Project Material</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
             </div>
+
+            {resourceType === "other" && (
+              <div className="form-row" style={{ marginTop: '-10px' }}>
+                <div className="form-group" style={{ animation: 'fadeInDown 0.3s ease' }}>
+                  <label className="form-label" htmlFor="other-type">Specify Type *</label>
+                  <input
+                    id="other-type"
+                    className="form-input"
+                    value={otherType}
+                    onChange={(e) => setOtherType(e.target.value)}
+                    placeholder="e.g. Lab Manual, Syllabus, Cheat Sheet"
+                    disabled={submitting}
+                  />
+                </div>
+              </div>
+            )}
           </section>
 
           <div className="section-divider" />

@@ -567,16 +567,13 @@ app.post('/resources/file', authMiddleware, (req, res) => {
 });
 
 app.put('/resources/:id', authMiddleware, async (req, res) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
-    const { title, description } = req.body;
-
-    if (!title && !description) {
-      return res.status(400).json({
-        success: false,
-        error: 'At least one field (title or description) is required'
-      });
-    }
+    const { 
+      title, description, resource_type, visibility, 
+      external_url, subject_code, start_year, end_year, unit_number 
+    } = req.body;
 
     const userIsAdmin = await isAdmin(req.user.id);
     const userIsOwner = await isResourceOwner(id, req.user.id);
@@ -585,24 +582,83 @@ app.put('/resources/:id', authMiddleware, async (req, res) => {
       return res.status(403).json({ success: false, error: 'You do not have permission to update this resource' });
     }
 
+    await client.query('BEGIN');
+
+    // Fetch existing resource to understand state
+    const existingResult = await client.query('SELECT * FROM resources WHERE id = $1', [id]);
+    if (existingResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, error: 'Resource not found' });
+    }
+    const existingResource = existingResult.rows[0];
+
     const updates = [];
     const values = [];
     let paramCount = 1;
 
-    if (title) { updates.push(`title = $${paramCount}`); values.push(title); paramCount++; }
-    if (description) { updates.push(`description = $${paramCount}`); values.push(description); paramCount++; }
+    const addUpdate = (field, value) => {
+      updates.push(`${field} = $${paramCount}`);
+      values.push(value);
+      paramCount++;
+    };
+
+    if (title) addUpdate('title', title.trim());
+    if (description !== undefined) addUpdate('description', description.trim());
+    if (resource_type) addUpdate('resource_type', resource_type);
+    if (visibility) addUpdate('visibility', visibility);
+
+    // Metadata Resolution
+    let finalSubjectId = existingResource.subject_id;
+    if (subject_code) {
+      const subject = await resolveSubject(subject_code);
+      finalSubjectId = subject.id;
+      if (finalSubjectId !== existingResource.subject_id) {
+        addUpdate('subject_id', finalSubjectId);
+      }
+    }
+    
+    if (start_year && end_year) {
+      const academicYearId = await resolveAcademicYear(parseInt(start_year), parseInt(end_year));
+      const offering = await resolveSubjectOffering(finalSubjectId, academicYearId);
+      if (offering.id !== existingResource.subject_offering_id) {
+        addUpdate('subject_offering_id', offering.id);
+      }
+    }
+
+    if (unit_number !== undefined) {
+      // If switching to Link, unit_id might stay or go.
+      // If explicitly provided, we should resolve it.
+    }
+
+    // CONVERSION LOGIC: Switch to External Link
+    if (external_url) {
+      addUpdate('external_url', external_url.trim());
+      addUpdate('content_type', 'external_link');
+      
+      // Definitively clear and delete existing file if present
+      if (existingResource.storage_path) {
+        await supabase.storage.from('resources').remove([existingResource.storage_path]);
+        addUpdate('storage_path', null);
+      }
+    }
+
+    if (updates.length === 0) {
+      await client.query('COMMIT');
+      return res.json({ success: true, data: existingResource });
+    }
 
     values.push(id);
     const updateQuery = `UPDATE resources SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`;
-    const result = await pool.query(updateQuery, values);
+    const result = await client.query(updateQuery, values);
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, error: 'Resource not found' });
-    }
+    await client.query('COMMIT');
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Error updating resource:', error);
-    res.status(500).json({ success: false, error: 'Failed to update resource' });
+    res.status(500).json({ success: false, error: error.message || 'Failed to update resource' });
+  } finally {
+    client.release();
   }
 });
 
@@ -660,8 +716,12 @@ app.put('/resources/file/:id', authMiddleware, (req, res) => {
       const updates = [
         'title = $1', 'description = $2', 'subject_id = $3',
         'subject_offering_id = $4', 'unit_id = $5', 'resource_type = $6',
+        'content_type = $7', 'external_url = $8'
       ];
-      const values = [title, description, subject.id, offering.id, unitId, resource_type];
+      const values = [
+        title, description, subject.id, offering.id, unitId, resource_type,
+        'file', null // Clear external_url when switching to file
+      ];
 
       if (storagePath) {
         updates.push(`storage_path = $${values.length + 1}`);
