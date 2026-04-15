@@ -3,7 +3,6 @@ import pool from '../db.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import { getIO } from '../socket.js';
 
 dotenv.config();
 
@@ -313,7 +312,7 @@ router.get('/resources/pending', authMiddleware, adminOnly, async (req, res) => 
   try {
     const result = await pool.query(`
       SELECT r.id, r.title, r.description, r.resource_type, r.content_type,
-        r.external_url, r.created_at, r.is_verified,
+        r.external_url, r.created_at, r.is_verified, r.ai_summary,
         s.code AS subject_code, s.name AS subject_name,
         c.name AS course_name,
         u.full_name AS contributor_name, u.email AS contributor_email, u.role AS contributor_role
@@ -335,7 +334,7 @@ router.get('/resources/all', authMiddleware, adminOnly, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT r.id, r.title, r.description, r.resource_type, r.content_type,
-        r.external_url, r.created_at, r.is_verified, r.verified_at,
+        r.external_url, r.created_at, r.is_verified, r.verified_at, r.ai_summary,
         s.code AS subject_code, s.name AS subject_name,
         c.name AS course_name,
         u.full_name AS contributor_name, u.email AS contributor_email, u.role AS contributor_role,
@@ -357,38 +356,13 @@ router.get('/resources/all', authMiddleware, adminOnly, async (req, res) => {
 router.put('/resources/:id/verify', authMiddleware, adminOnly, async (req, res) => {
   const { id } = req.params;
   try {
-    // Fetch full resource details (including contributor + subject) before verifying
-    const detailsResult = await pool.query(
-      `SELECT r.title, s.name AS subject_name, u.full_name AS contributor_name
-       FROM resources r
-       JOIN subjects s ON r.subject_id = s.id
-       JOIN users u ON r.contributor_id = u.id
-       WHERE r.id = $1`,
-      [id]
-    );
-
     const result = await pool.query(
       `UPDATE resources
-       SET is_verified = true, verified_by = $1, verified_at = NOW(),
-           visibility = 'public'
+       SET is_verified = true, verified_by = $1, verified_at = NOW()
        WHERE id = $2 RETURNING id, title, is_verified`,
       [req.user.id, id]
     );
     if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Resource not found' });
-
-    // Emit real-time Socket.io event to all connected students
-    if (detailsResult.rows.length > 0) {
-      const { title, subject_name, contributor_name } = detailsResult.rows[0];
-      getIO().emit('resource:verified', {
-        resourceId: result.rows[0].id,
-        title,
-        subjectName: subject_name,
-        contributorName: contributor_name,
-        verifiedAt: new Date().toISOString(),
-      });
-      console.log(`[Socket.IO] Emitted resource:verified for "${title}"`);
-    }
-
     res.json({ success: true, data: result.rows[0] });
   } catch (err) {
     console.error('Error verifying resource:', err);

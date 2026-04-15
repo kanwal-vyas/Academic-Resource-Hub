@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../auth/AuthContext";
 import { API_BASE_URL } from "../utils/api";
+import SummaryModal from "../components/SummaryModal";
 import "../styles/browse.css";
 
 const RESOURCE_TYPE_CONFIG = {
@@ -165,6 +166,46 @@ function Browse() {
     }
   };
 
+  const handleSummarize = async (resourceId) => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      if (!token) return;
+
+      // Clear previous summary if any to show loading state in modal if we want
+      setActiveSummary({ title: "", summary: null });
+
+      const response = await fetch(`${API_BASE_URL}/resources/${resourceId}/summarize`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || "Failed to generate summary");
+      }
+
+      const result = await response.json();
+      const newSummary = result.summary;
+
+      await refetch(); // Refetch to get the new summary stored in DB
+
+      // Open modal with the new summary
+      const res = resources.find(r => r.id === resourceId);
+      setActiveSummary({
+        title: res?.title || "Resource Snapshot",
+        summary: newSummary
+      });
+    } catch (err) {
+      console.error("Summarization failed:", err);
+      setActiveSummary(null);
+      alert(err.message);
+    }
+  };
+
   const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
@@ -174,6 +215,7 @@ function Browse() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const [selectedResourceId, setSelectedResourceId] = useState(null);
+  const [activeSummary, setActiveSummary] = useState(null); // { title: string, summary: string }
 
   // Derive unique courses from resources
   const courses = Array.from(
@@ -233,7 +275,7 @@ function Browse() {
       (r) =>
         selectedCourse === "" ||
         r.course_name?.toLowerCase().trim() ===
-          selectedCourse.toLowerCase().trim()
+        selectedCourse.toLowerCase().trim()
     )
     .filter(
       (r) =>
@@ -319,19 +361,40 @@ function Browse() {
         <section className="filters-section">
           <div className="card filters-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
-              <h2 className="filters-title">Filter Resources</h2>
-              
-              <div className="search-bar-container">
-                <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <h2 className="filters-title" style={{ margin: 0 }}>Filter Resources</h2>
+
+              <div className="search-bar-container" style={{ position: 'relative', flex: '1 1 300px', maxWidth: '500px' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }}>
                   <circle cx="11" cy="11" r="8"></circle>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
                 <input
                   type="text"
-                  className="search-bar"
                   placeholder="Search by title, subject, or faculty..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem 1rem 0.75rem 2.5rem",
+                    borderRadius: "12px",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    background: "rgba(15, 23, 42, 0.6)",
+                    color: "#f8fafc",
+                    fontSize: "0.95rem",
+                    transition: "all 0.2s ease",
+                    outline: "none",
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.background = "rgba(15, 23, 42, 0.9)";
+                    e.target.style.border = "1px solid rgba(14, 165, 233, 0.5)";
+                    e.target.style.boxShadow = "0 0 0 3px rgba(14, 165, 233, 0.15)";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.background = "rgba(15, 23, 42, 0.6)";
+                    e.target.style.border = "1px solid rgba(255, 255, 255, 0.08)";
+                    e.target.style.boxShadow = "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)";
+                  }}
                 />
               </div>
             </div>
@@ -449,20 +512,20 @@ function Browse() {
               selectedFaculty ||
               typeFilter !== "all" ||
               yearFilter !== "all") && (
-              <button
-                className="clear-filters-button"
-                onClick={() => {
-                  setSelectedCourse("");
-                  setSelectedUnit("");
-                  setSelectedSubject("");
-                  setSelectedFaculty("");
-                  setTypeFilter("all");
-                  setYearFilter("all");
-                }}
-              >
-                Clear Filters
-              </button>
-            )}
+                <button
+                  className="clear-filters-button"
+                  onClick={() => {
+                    setSelectedCourse("");
+                    setSelectedUnit("");
+                    setSelectedSubject("");
+                    setSelectedFaculty("");
+                    setTypeFilter("all");
+                    setYearFilter("all");
+                  }}
+                >
+                  Clear Filters
+                </button>
+              )}
           </div>
 
           {loading && <LoadingState />}
@@ -484,12 +547,25 @@ function Browse() {
                     canModify={isAdmin}
                     onEdit={() => navigate(`/edit-resource/${resource.id}`)}
                     onDelete={() => handleDelete(resource.id)}
+                    onSummarize={() => handleSummarize(resource.id)}
+                    onViewSummary={(summary) => setActiveSummary({
+                      title: resource.title,
+                      summary: summary
+                    })}
                   />
                 );
               })}
             </div>
           )}
         </section>
+
+        {/* Global Floating Summary Board */}
+        <SummaryModal 
+          isOpen={!!activeSummary}
+          onClose={() => setActiveSummary(null)}
+          title={activeSummary?.title}
+          summary={activeSummary?.summary}
+        />
       </div>
     </main>
   );
@@ -517,7 +593,18 @@ function ResourceCard({
   canModify,
   onEdit,
   onDelete,
+  onSummarize,
+  onViewSummary,
 }) {
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const aiSummary = resource.ai_summary;
+
+  const handleSummarizeClick = async (e) => {
+    e.stopPropagation();
+    setIsSummarizing(true);
+    await onSummarize();
+    setIsSummarizing(false);
+  };
   const resourceType = getResourceTypeDisplay(resource.resource_type);
   const contributorTypeFormatted = formatContributorType(
     resource.contributor_type
@@ -533,7 +620,7 @@ function ResourceCard({
   return (
     <article className={`card resource-card ${isSelected ? "selected" : ""} ${badgeClass ? `stripe-${resource.resource_type}` : ''}`}>
       <div className="resource-stripe"></div>
-      
+
       <header className="resource-header">
         <div className="resource-title-group">
           <h3 className="resource-title">{resource.title}</h3>
@@ -576,6 +663,48 @@ function ResourceCard({
       <p className="resource-description">
         {resource.description || "No description provided."}
       </p>
+
+      {/* AI Summary Section */}
+      {resource.content_type === "file" && resource.storage_path?.toLowerCase().endsWith(".pdf") && (
+        <div className="ai-summary-section">
+          <div className="ai-summary-header">
+            <h4 className="ai-summary-title">
+              <svg className="ai-sparkle" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3l1.912 5.813a2 2 0 001.9 1.38H21l-4.75 3.447a2 2 0 00-.727 2.233L17.435 21 12 17.056 6.565 21l1.912-5.127a2 2 0 00-.727-2.233L3 10.193h5.188a2 2 0 001.9-1.38L12 3z" />
+              </svg>
+              Quick AI Snapshot
+            </h4>
+            
+            <div className="ai-summary-actions">
+              {!aiSummary && (
+                <button 
+                  className="summarize-button" 
+                  onClick={handleSummarizeClick}
+                  disabled={isSummarizing}
+                >
+                  {isSummarizing ? (
+                    <span className="ai-loading-text">
+                      <span className="pulse-dot"></span>
+                      Analyzing...
+                    </span>
+                  ) : (
+                    "Summarize"
+                  )}
+                </button>
+              )}
+
+              {aiSummary && (
+                <button 
+                  className="summarize-button" 
+                  onClick={(e) => { e.stopPropagation(); onViewSummary(aiSummary); }}
+                >
+                  View Snapshot
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="resource-metadata-grid">
         <div className="meta-item">

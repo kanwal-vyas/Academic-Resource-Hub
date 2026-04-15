@@ -14,9 +14,26 @@ function FacultyCard({ faculty }) {
   const navigate = useNavigate();
 
   const availability = [
-    faculty.open_for_interns && "Interns",
-    faculty.open_for_research && "Research",
-    faculty.open_for_mentoring && "Mentoring",
+    faculty.open_for_interns && { label: "Interns", className: "chip-interns", icon: (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    )},
+    faculty.open_for_research && { label: "Research", className: "chip-research", icon: (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2 22l7-5M9 7l5 5-5 5-5-5 5-5zM22 2l-8 8" />
+        <path d="M17 2l5 5" />
+      </svg>
+    )},
+    faculty.open_for_mentoring && { label: "Mentoring", className: "chip-mentoring", icon: (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+      </svg>
+    )},
   ].filter(Boolean);
 
   return (
@@ -32,13 +49,14 @@ function FacultyCard({ faculty }) {
 
       {availability.length > 0 && (
         <div className="chips">
-          {availability.map((label) => (
+          {availability.map((item) => (
             <span
-              key={label}
-              className={`chip ${label === "Interns" ? "chip-interns" : ""}`}
+              key={item.label}
+              className={`chip ${item.className}`}
             >
-              {label === "Interns" && <span className="status-dot"></span>}
-              {label}
+              <span className="status-dot"></span>
+              {item.icon}
+              {item.label}
             </span>
           ))}
         </div>

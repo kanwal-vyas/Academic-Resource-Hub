@@ -26,6 +26,12 @@ async function main() {
       ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT false;
     `);
 
+    // Add ai_summary column to resources if it doesn't exist
+    await client.query(`
+      ALTER TABLE resources
+      ADD COLUMN IF NOT EXISTS ai_summary TEXT;
+    `);
+
     await client.query("COMMIT");
     console.log("Database schema updated successfully.");
   } catch (err) {

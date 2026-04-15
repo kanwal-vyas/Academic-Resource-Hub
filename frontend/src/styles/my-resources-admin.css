@@ -1,0 +1,124 @@
+/* ===============================
+   MyResources Admin-Style Buttons
+   =============================== */
+.mr-actions-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.mr-actions-secondary {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.mr-btn {
+  padding: 0.65rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: inherit;
+  text-decoration: none;
+}
+
+.mr-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mr-btn--view {
+  background: var(--accent) !important;
+  color: #1a2332 !important; /* Force dark text on light sage */
+  width: 100%;
+}
+
+.mr-btn--view:hover:not(:disabled) {
+  background: var(--primary);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.mr-btn--edit {
+  flex: 1;
+  background: rgba(93, 122, 153, 0.12);
+  color: var(--interaction);
+  border: 1.5px solid rgba(93, 122, 153, 0.25);
+}
+
+.mr-btn--edit:hover:not(:disabled) {
+  background: var(--interaction);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.mr-btn--delete {
+  flex: 1;
+  background: rgba(239, 68, 68, 0.08);
+  color: #f87171;
+  border: 1.5px solid rgba(239, 68, 68, 0.2);
+}
+
+.mr-btn--delete:hover:not(:disabled) {
+  background: #ef4444;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ── Dark Mode Contrast Overrides ── */
+.dark .mr-btn--view {
+  background: var(--accent) !important;
+  color: #0c0f1a !important; /* Force darkest navy on sage */
+}
+
+.dark .mr-btn--edit {
+  background: rgba(93, 122, 153, 0.25) !important;
+  color: #a5ccff !important; /* Ultra-bright interactions blue */
+  border: 1.5px solid rgba(165, 204, 255, 0.4) !important;
+}
+
+.dark .mr-btn--edit:hover:not(:disabled) {
+  background: #60a5fa !important;
+  color: #0c0f1a !important;
+}
+
+.dark .mr-btn--delete {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #ff9999 !important; /* Ultra-bright danger red */
+  border: 1.5px solid rgba(255, 153, 153, 0.4) !important;
+}
+
+.dark .mr-btn--delete:hover:not(:disabled) {
+  background: #f87171 !important;
+  color: #0c0f1a !important;
+}
+
+/* Spinner in button */
+.mr-btn-loading {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: mr-spin 0.6s linear infinite;
+}
+
+@keyframes mr-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 640px) {
+  .mr-actions-secondary {
+    flex-direction: column;
+  }
+}

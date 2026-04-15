@@ -1,8 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
 import express from 'express';
-import { createServer } from 'http';
-import { initSocketIO } from './socket.js';
 import Busboy from 'busboy';
 import { createClient } from '@supabase/supabase-js';
 import pool from './db.js'
@@ -12,14 +10,8 @@ import meRouter from "./routes/me.js";
 import facultyRoutes from './routes/facultyRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
-
+import { extractTextFromPDF, generateSummary } from './utils/ai.js';
 const app = express();
-const httpServer = createServer(app);
-
-// ============================================================================
-// SOCKET.IO SETUP
-// ============================================================================
-initSocketIO(httpServer);
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -108,7 +100,7 @@ function generateStoragePath(subjectId, offeringId, unitId, filename) {
 // ============================================================================
 
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:5100"],
+  origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:5100"],
   credentials: true
 }));
 
@@ -122,8 +114,8 @@ app.get('/resources', authMiddleware, async (req, res) => {
     const query = `
       SELECT 
         r.id, r.title, r.description, r.resource_type, r.content_type,
-        r.contributor_id, r.external_url, r.created_at,
-        r.is_verified, r.verified_at,
+        r.contributor_id, r.external_url, r.storage_path, r.created_at,
+        r.is_verified, r.verified_at, r.ai_summary,
         s.code AS subject_code, s.name AS subject_name, s.course_id,
         c.name AS course_name, ay.start_year, ay.end_year, u.unit_number,
         usr.role AS contributor_type, usr.is_verified AS contributor_is_verified,
@@ -159,7 +151,7 @@ app.get('/resources/latest', authMiddleware, async (req, res) => {
     const query = `
       SELECT 
         r.id, r.title, r.description, r.resource_type, r.content_type,
-        r.external_url, r.created_at,
+        r.external_url, r.storage_path, r.created_at, r.ai_summary,
         s.code AS subject_code, s.name AS subject_name,
         ay.start_year, ay.end_year, u.unit_number,
         usr.role AS contributor_type, usr.is_verified AS contributor_is_verified,
@@ -196,8 +188,8 @@ app.get('/resources/my', authMiddleware, async (req, res) => {
     const query = `
       SELECT 
         r.id, r.title, r.description, r.resource_type, r.content_type,
-        r.contributor_id, r.external_url, r.created_at,
-        r.is_verified, r.verified_at,
+        r.contributor_id, r.external_url, r.storage_path, r.created_at,
+        r.is_verified, r.verified_at, r.ai_summary,
         s.code AS subject_code, s.name AS subject_name, s.course_id,
         c.name AS course_name, ay.start_year, ay.end_year, u.unit_number,
         usr.role AS contributor_type, usr.is_verified AS contributor_is_verified,
@@ -255,7 +247,7 @@ app.get('/resources/:id', authMiddleware, async (req, res) => {
       SELECT 
         r.id, r.title, r.description, r.resource_type, r.content_type,
         r.contributor_id, r.external_url, r.storage_path, r.created_at,
-        r.subject_offering_id,
+        r.subject_offering_id, r.ai_summary,
         s.id AS subject_id, s.code AS subject_code, s.name AS subject_name, s.course_id,
         c.name AS course_name, ay.start_year, ay.end_year, u.unit_number,
         usr.role AS contributor_type, usr.is_verified AS contributor_is_verified,
@@ -279,6 +271,68 @@ app.get('/resources/:id', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error fetching resource by id:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch resource' });
+  }
+});
+
+app.post('/resources/:id/summarize', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // 1. Fetch resource details
+    const result = await pool.query(
+      'SELECT id, content_type, storage_path, external_url, ai_summary FROM resources WHERE id = $1',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Resource not found' });
+    }
+
+    const resource = result.rows[0];
+
+    // If summary already exists, return it
+    if (resource.ai_summary) {
+      return res.json({ success: true, summary: resource.ai_summary });
+    }
+
+    let textForAi = "";
+
+    if (resource.content_type === 'file') {
+      if (!resource.storage_path.toLowerCase().endsWith('.pdf')) {
+        return res.status(400).json({ success: false, error: 'Only PDF files can be summarized currently' });
+      }
+
+      // 2. Download from Supabase
+      const { data: fileBuffer, error: downloadError } = await supabase.storage
+        .from('resources')
+        .download(resource.storage_path);
+
+      if (downloadError) throw new Error(`Failed to download file: ${downloadError.message}`);
+
+      // 3. Extract text
+      const buffer = Buffer.from(await fileBuffer.arrayBuffer());
+      textForAi = await extractTextFromPDF(buffer);
+    } else {
+      return res.status(400).json({ success: false, error: 'Only uploaded PDF files can be summarized' });
+    }
+
+    if (!textForAi || textForAi.trim().length === 0) {
+      return res.status(400).json({ success: false, error: 'No text could be extracted from this PDF' });
+    }
+
+    // 4. Generate summary
+    const summary = await generateSummary(textForAi);
+
+    // 5. Save to DB
+    await pool.query(
+      'UPDATE resources SET ai_summary = $1 WHERE id = $2',
+      [summary, id]
+    );
+
+    res.json({ success: true, summary });
+  } catch (error) {
+    console.error('Error generating summary:', error);
+    res.status(500).json({ success: false, error: error.message || 'Failed to generate summary' });
   }
 });
 
@@ -712,9 +766,8 @@ app.use((err, req, res, next) => {
 // ============================================================================
 
 const PORT = process.env.PORT || 3000;
-httpServer.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`[Socket.IO] WebSocket server ready on port ${PORT}`);
 });
 
 export default app;
