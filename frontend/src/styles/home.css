@@ -53,16 +53,19 @@
   flex-direction: column;
   gap: var(--space-md);
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   padding: var(--space-lg);
-  transition: box-shadow 0.25s ease, transform 0.25s ease;
+  transition: all 0.4s var(--ease-expo);
 }
 
 .resource-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-8px) scale(1.02);
+  border-color: var(--accent);
+  box-shadow: 
+    0 20px 40px -20px rgba(0, 0, 0, 0.15),
+    0 0 20px rgba(107, 142, 127, 0.1);
 }
 
 .resource-meta {
@@ -517,15 +520,19 @@
   align-items: center;
   text-align: center;
   gap: var(--space-md);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid var(--border);
+  transition: all 0.4s var(--ease-expo);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  padding: var(--space-xl);
+  border-radius: var(--radius-lg);
 }
 
 .faculty-card:hover {
-  transform: translateY(-5px);
-  border-color: var(--accent);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
-    0 0 15px var(--accent-light);
+  transform: translateY(-8px) scale(1.02);
+  border-color: var(--interaction);
+  box-shadow: 
+    0 20px 40px -20px rgba(0, 0, 0, 0.15),
+    0 0 20px rgba(93, 122, 153, 0.15);
 }
 
 .faculty-avatar {

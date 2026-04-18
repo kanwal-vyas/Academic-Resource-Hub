@@ -429,20 +429,8 @@ function UploadResource() {
       <div className="upload-card">
         <div style={{ padding: '0 0 1rem 0' }}>
           <button 
+            className="back-button"
             onClick={() => navigate(-1)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#94a3b8',
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              transition: 'color 0.2sease'
-            }}
-            onMouseEnter={(e) => e.target.style.color = '#fff'}
-            onMouseLeave={(e) => e.target.style.color = '#94a3b8'}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -465,8 +453,12 @@ function UploadResource() {
         <form className="upload-form" onSubmit={handleSubmit}>
 
           {/* ── Section: Resource Information ── */}
-          <section className="form-section">
-            <h2 className="section-title">Resource Information</h2>
+          <section className="form-section stripe-info">
+            <div className="resource-stripe" />
+            <h2 className="section-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Resource Information
+            </h2>
 
             <div className="form-group">
               <label className="form-label" htmlFor="title">Title *</label>
@@ -475,7 +467,7 @@ function UploadResource() {
                 className="form-input"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter resource title"
+                placeholder="Give your resource a clear, descriptive title"
                 disabled={submitting}
               />
             </div>
@@ -488,17 +480,19 @@ function UploadResource() {
                 rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe the resource (optional)"
+                placeholder="Provide details about the topics covered, importance, etc."
                 disabled={submitting}
               />
             </div>
           </section>
 
-          <div className="section-divider" />
-
           {/* ── Section: Classification ── */}
-          <section className="form-section">
-            <h2 className="section-title">Classification</h2>
+          <section className="form-section stripe-classification">
+            <div className="resource-stripe" />
+            <h2 className="section-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              Classification
+            </h2>
 
             <div className="form-row">
               <div className="form-group">
@@ -611,11 +605,13 @@ function UploadResource() {
             )}
           </section>
 
-          <div className="section-divider" />
-
           {/* ── Section: Content Source ── */}
-          <section className="form-section">
-            <h2 className="section-title">Content Source</h2>
+          <section className="form-section stripe-content">
+            <div className="resource-stripe" />
+            <h2 className="section-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Content Source
+            </h2>
 
             <div className="radio-group">
               <label className="radio-label">
@@ -645,17 +641,33 @@ function UploadResource() {
                 <label className="form-label" htmlFor="file-upload">
                   {isEditMode ? "Replace PDF File (optional)" : "Upload PDF File *"}
                 </label>
-                <input
-                  id="file-upload"
-                  type="file"
-                  className="form-file"
-                  accept=".pdf"
-                  onChange={(e) => setFile(e.target.files[0])}
-                  disabled={submitting}
-                />
-                {file && <p className="file-hint">Selected: {file.name}</p>}
+                <div className={`form-file-container ${file ? 'file-selected' : ''}`}>
+                  <input
+                    id="file-upload"
+                    type="file"
+                    className="form-file"
+                    accept=".pdf"
+                    onChange={(e) => setFile(e.target.files[0])}
+                    disabled={submitting}
+                  />
+                  <div className="dropzone-visual">
+                    <div className="dropzone-icon">
+                      {file ? (
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      ) : (
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                      )}
+                    </div>
+                    <div className="dropzone-title">
+                      {file ? file.name : "Choose a PDF file or drag it here"}
+                    </div>
+                    <div className="dropzone-subtitle">
+                      {file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : "Files up to 50MB are supported"}
+                    </div>
+                  </div>
+                </div>
                 {isEditMode && !file && (
-                  <p className="file-hint">No file selected — existing file will be kept.</p>
+                  <p className="file-hint">Note: Existing file will be kept if none selected.</p>
                 )}
               </div>
             )}
@@ -667,7 +679,7 @@ function UploadResource() {
                   id="external-link"
                   className="form-input"
                   type="url"
-                  placeholder="https://example.com/resource"
+                  placeholder="https://example.com/academic-resource"
                   value={externalLink}
                   onChange={(e) => setExternalLink(e.target.value)}
                   disabled={submitting}
@@ -676,11 +688,13 @@ function UploadResource() {
             )}
           </section>
 
-          <div className="section-divider" />
-
           {/* ── Section: Visibility ── */}
-          <section className="form-section">
-            <h2 className="section-title">Visibility</h2>
+          <section className="form-section stripe-visibility">
+            <div className="resource-stripe" />
+            <h2 className="section-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Visibility
+            </h2>
 
             <div className="form-group">
               <label className="form-label" htmlFor="visibility">Who can access this resource? *</label>

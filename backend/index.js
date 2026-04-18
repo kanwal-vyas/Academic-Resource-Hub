@@ -503,8 +503,10 @@ app.post('/resources/file', authMiddleware, (req, res) => {
 
   busboy.on('finish', async () => {
     const client = await pool.connect();
+    let uploadedPath = null;
+
     try {
-      const { title, description, subject_code, start_year, end_year, unit_number, resource_type } = fields;
+      const { title, description, subject_code, start_year, end_year, unit_number, resource_type, visibility } = fields;
 
       if (!title || !description || !subject_code || !start_year || !end_year) {
         return res.status(400).json({
@@ -531,6 +533,9 @@ app.post('/resources/file', authMiddleware, (req, res) => {
         .upload(storagePath, fileData, { contentType: mimeType, upsert: false });
 
       if (uploadError) throw new Error(`File upload failed: ${uploadError.message}`);
+      
+      // Track that the file has been uploaded to Supabase
+      uploadedPath = storagePath;
 
       // Auto-verify if the uploader is a verified user; otherwise send to admin queue
       const autoVerified = req.user.is_verified === true;
@@ -539,21 +544,31 @@ app.post('/resources/file', authMiddleware, (req, res) => {
         INSERT INTO resources (
           id, subject_id, subject_offering_id, unit_id, title, description,
           resource_type, content_type, storage_path, contributor_id,
-          is_verified, verified_by, verified_at
-        ) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+          is_verified, verified_by, verified_at, visibility
+        ) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         RETURNING *
       `;
       const result = await client.query(insertQuery, [
-        subject.id, offering.id, unitId, title, description,
+        subject.id, offering.id, unitId, title.trim(), description.trim(),
         resource_type, 'file', storagePath, req.user.id,
         autoVerified,
         autoVerified ? req.user.id : null,
         autoVerified ? new Date() : null,
+        visibility || 'public'
       ]);
+
       await client.query('COMMIT');
       res.status(201).json({ success: true, data: result.rows[0] });
+
     } catch (error) {
       await client.query('ROLLBACK');
+      
+      // Cleanup: Delete the file from Supabase if the DB transaction failed
+      if (uploadedPath) {
+        console.log(`Cleaning up orphaned file from storage: ${uploadedPath}`);
+        await supabase.storage.from('resources').remove([uploadedPath]);
+      }
+
       console.error('Error uploading file resource:', error);
       res.status(400).json({ success: false, error: error.message || 'Failed to upload file' });
     } finally {
@@ -684,12 +699,15 @@ app.put('/resources/file/:id', authMiddleware, (req, res) => {
 
   busboy.on('finish', async () => {
     const client = await pool.connect();
+    let newStoragePath = null;
+    let oldStoragePath = null;
+
     try {
       const { id } = req.params;
-      const { title, description, subject_code, start_year, end_year, unit_number, resource_type } = fields;
+      const { title, description, subject_code, start_year, end_year, unit_number, resource_type, visibility } = fields;
 
-      const userIsAdmin = await isAdmin(req.user.id);
-      const userIsOwner = await isResourceOwner(id, req.user.id);
+      const userIsAdmin = await isAdmin(req.user.id, client);
+      const userIsOwner = await isResourceOwner(id, req.user.id, client);
       if (!userIsAdmin && !userIsOwner) {
         return res.status(403).json({ success: false, error: 'Permission denied' });
       }
@@ -703,32 +721,36 @@ app.put('/resources/file/:id', authMiddleware, (req, res) => {
         unitId = await resolveUnit(offering.id, parseInt(unit_number));
       }
 
-      let storagePath;
+      const existingResult = await client.query('SELECT storage_path FROM resources WHERE id = $1', [id]);
+      if (existingResult.rows.length === 1) {
+        oldStoragePath = existingResult.rows[0].storage_path;
+      }
+
+      let storagePath = oldStoragePath;
       if (fileData && filename) {
-        const existing = await client.query('SELECT storage_path FROM resources WHERE id = $1', [id]);
-        if (existing.rows[0]?.storage_path) {
-          await supabase.storage.from('resources').remove([existing.rows[0].storage_path]);
-        }
+        // Upload NEW file first
         storagePath = generateStoragePath(subject.id, offering.id, unitId, filename);
         const { error: uploadError } = await supabase.storage
           .from('resources')
           .upload(storagePath, fileData, { contentType: mimeType, upsert: false });
+        
         if (uploadError) throw new Error(`File upload failed: ${uploadError.message}`);
+        newStoragePath = storagePath;
       }
 
       const updates = [
         'title = $1', 'description = $2', 'subject_id = $3',
         'subject_offering_id = $4', 'unit_id = $5', 'resource_type = $6',
-        'content_type = $7', 'external_url = $8'
+        'content_type = $7', 'external_url = $8', 'visibility = $9'
       ];
       const values = [
         title, description, subject.id, offering.id, unitId, resource_type,
-        'file', null // Clear external_url when switching to file
+        'file', null, visibility || 'public'
       ];
 
-      if (storagePath) {
+      if (newStoragePath) {
         updates.push(`storage_path = $${values.length + 1}`);
-        values.push(storagePath);
+        values.push(newStoragePath);
       }
 
       values.push(id);
@@ -738,14 +760,27 @@ app.put('/resources/file/:id', authMiddleware, (req, res) => {
       );
 
       if (result.rows.length === 0) {
-        await client.query('ROLLBACK');
-        return res.status(404).json({ success: false, error: 'Resource not found' });
+        throw new Error('Resource not found');
       }
 
       await client.query('COMMIT');
+
+      // SUCCESS: Now delete OLD file if it was replaced
+      if (newStoragePath && oldStoragePath) {
+        console.log(`Cleaning up old file after successful update: ${oldStoragePath}`);
+        await supabase.storage.from('resources').remove([oldStoragePath]);
+      }
+
       res.json({ success: true, data: result.rows[0] });
     } catch (error) {
       await client.query('ROLLBACK');
+
+      // FAILURE: Cleanup the NEW file if we uploaded one
+      if (newStoragePath) {
+        console.log(`Cleaning up failed new upload: ${newStoragePath}`);
+        await supabase.storage.from('resources').remove([newStoragePath]);
+      }
+
       console.error('Error updating file resource:', error);
       res.status(400).json({ success: false, error: error.message || 'Update failed' });
     } finally {

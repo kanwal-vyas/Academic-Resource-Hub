@@ -1,31 +1,31 @@
 :root {
-  --chatbot-primary: #6366f1;
-  --chatbot-secondary: #a855f7;
+  --chatbot-primary: var(--accent);
+  --chatbot-secondary: var(--interaction);
   /* Light Mode Defaults */
-  --chatbot-bg: rgba(255, 255, 255, 0.82);
-  --chatbot-glass-border: rgba(99, 102, 241, 0.15);
-  --chatbot-text: #1e293b;
-  --chatbot-text-muted: #64748b;
-  --chatbot-user-msg: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-  --chatbot-ai-msg: rgba(99, 102, 241, 0.06);
-  --chatbot-glow: rgba(99, 102, 241, 0.2);
-  --chatbot-input-bg: rgba(255, 255, 255, 0.6);
-  --chatbot-btn-bg: rgba(99, 102, 241, 0.08);
-  --chatbot-btn-text: #4f46e5;
+  --chatbot-bg: rgba(250, 250, 249, 0.9); /* Matches --surface */
+  --chatbot-glass-border: var(--border);
+  --chatbot-text: var(--text);
+  --chatbot-text-muted: var(--text-secondary);
+  --chatbot-user-msg: linear-gradient(135deg, var(--accent) 0%, var(--interaction) 100%);
+  --chatbot-ai-msg: rgba(107, 142, 127, 0.08);
+  --chatbot-glow: rgba(107, 142, 127, 0.2);
+  --chatbot-input-bg: var(--bg);
+  --chatbot-btn-bg: rgba(93, 122, 153, 0.1);
+  --chatbot-btn-text: var(--interaction);
   --chatbot-chip-bg: rgba(0, 0, 0, 0.03);
 }
 
 .dark {
-  --chatbot-bg: rgba(15, 23, 42, 0.85);
-  --chatbot-glass-border: rgba(255, 255, 255, 0.12);
-  --chatbot-text: #f8fafc;
-  --chatbot-text-muted: #94a3b8;
-  --chatbot-user-msg: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  --chatbot-bg: rgba(21, 27, 43, 0.9); /* Matches --surface */
+  --chatbot-glass-border: var(--border);
+  --chatbot-text: var(--text);
+  --chatbot-text-muted: var(--text-secondary);
+  --chatbot-user-msg: linear-gradient(135deg, var(--accent) 0%, var(--interaction) 100%);
   --chatbot-ai-msg: rgba(255, 255, 255, 0.04);
-  --chatbot-glow: rgba(99, 102, 241, 0.4);
-  --chatbot-input-bg: rgba(0, 0, 0, 0.3);
-  --chatbot-btn-bg: rgba(165, 180, 252, 0.15);
-  --chatbot-btn-text: #a5b4fc;
+  --chatbot-glow: rgba(142, 178, 159, 0.3); /* Matches dark --accent */
+  --chatbot-input-bg: rgba(0, 0, 0, 0.2);
+  --chatbot-btn-bg: rgba(255, 255, 255, 0.05);
+  --chatbot-btn-text: var(--accent);
   --chatbot-chip-bg: rgba(255, 255, 255, 0.03);
 }
 
@@ -49,7 +49,7 @@
   cursor: pointer;
   box-shadow: 0 12px 30px -8px var(--chatbot-glow);
   transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  border: 4px solid rgba(255, 255, 255, 0.1);
+  border: 4px solid var(--chatbot-bg);
   animation: bubble-float 4s ease-in-out infinite;
 }
 
@@ -130,7 +130,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 12px var(--chatbot-glow);
 }
 
 .chatbot-header h3 {
@@ -245,7 +245,7 @@
   background: var(--chatbot-user-msg);
   color: white;
   border-bottom-right-radius: 4px;
-  box-shadow: 0 8px 20px -6px rgba(79, 70, 229, 0.4);
+  box-shadow: 0 8px 20px -6px var(--chatbot-glow);
   animation: slide-in-right 0.4s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
@@ -291,11 +291,11 @@
 }
 
 .chat-action-btn:hover {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(168, 85, 247, 0.3) 100%);
-  border-color: rgba(165, 180, 252, 0.5);
+  background: linear-gradient(135deg, var(--chatbot-primary) 0%, var(--chatbot-secondary) 100%);
+  border-color: var(--accent-light);
   color: #fff;
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 8px 20px var(--chatbot-glow);
 }
 
 .message-meta {
@@ -307,7 +307,7 @@
 
 .chatbot-input-area {
   padding: 1.5rem;
-  background: linear-gradient(to top, rgba(15, 23, 42, 0.6) 0%, transparent 100%);
+  background: var(--chatbot-bg);
   border-top: 1px solid var(--chatbot-glass-border);
 }
 
@@ -355,7 +355,7 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 12px var(--chatbot-glow);
 }
 
 .chatbot-send:hover:not(:disabled) {
@@ -396,9 +396,9 @@
 }
 
 .context-chip {
-  background: linear-gradient(90deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.1));
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  color: #a5b4fc;
+  background: linear-gradient(90deg, rgba(107, 142, 127, 0.15), rgba(93, 122, 153, 0.1));
+  border: 1px solid rgba(107, 142, 127, 0.3);
+  color: var(--accent);
   padding: 6px 12px;
   border-radius: 10px;
   font-size: 0.8rem;
