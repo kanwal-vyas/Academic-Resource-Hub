@@ -620,13 +620,21 @@ app.put('/resources/:id', authMiddleware, async (req, res) => {
       paramCount++;
     };
 
-    if (title) addUpdate('title', title.trim());
-    if (description !== undefined) addUpdate('description', description.trim());
+    let finalSubjectId = existingResource.subject_id;
+    let contentChanged = false;
+
+    if (title && title.trim() !== existingResource.title) {
+      addUpdate('title', title.trim());
+      contentChanged = true;
+    }
+    if (description !== undefined && description.trim() !== existingResource.description) {
+      addUpdate('description', description.trim());
+      contentChanged = true;
+    }
     if (resource_type) addUpdate('resource_type', resource_type);
     if (visibility) addUpdate('visibility', visibility);
 
     // Metadata Resolution
-    let finalSubjectId = existingResource.subject_id;
     if (subject_code) {
       const subject = await resolveSubject(subject_code);
       finalSubjectId = subject.id;
@@ -649,15 +657,20 @@ app.put('/resources/:id', authMiddleware, async (req, res) => {
     }
 
     // CONVERSION LOGIC: Switch to External Link
-    if (external_url) {
+    if (external_url && external_url.trim() !== existingResource.external_url) {
       addUpdate('external_url', external_url.trim());
       addUpdate('content_type', 'external_link');
+      contentChanged = true;
       
       // Definitively clear and delete existing file if present
       if (existingResource.storage_path) {
         await supabase.storage.from('resources').remove([existingResource.storage_path]);
         addUpdate('storage_path', null);
       }
+    }
+
+    if (contentChanged) {
+      addUpdate('ai_summary', null);
     }
 
     if (updates.length === 0) {
@@ -741,7 +754,8 @@ app.put('/resources/file/:id', authMiddleware, (req, res) => {
       const updates = [
         'title = $1', 'description = $2', 'subject_id = $3',
         'subject_offering_id = $4', 'unit_id = $5', 'resource_type = $6',
-        'content_type = $7', 'external_url = $8', 'visibility = $9'
+        'content_type = $7', 'external_url = $8', 'visibility = $9',
+        'ai_summary = NULL'
       ];
       const values = [
         title, description, subject.id, offering.id, unitId, resource_type,
