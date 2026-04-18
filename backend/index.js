@@ -269,6 +269,11 @@ app.get('/resources/:id', authMiddleware, async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'Resource not found' });
     }
+
+    // Refresh access timestamp for the summary
+    pool.query('UPDATE resources SET summary_last_accessed_at = NOW() WHERE id = $1', [id])
+      .catch(err => console.error('Error updating summary access time:', err));
+
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error('Error fetching resource by id:', error);
@@ -292,8 +297,10 @@ app.post('/resources/:id/summarize', authMiddleware, async (req, res) => {
 
     const resource = result.rows[0];
 
-    // If summary already exists, return it
+    // If summary already exists, return it and refresh its access timestamp
     if (resource.ai_summary) {
+      pool.query('UPDATE resources SET summary_last_accessed_at = NOW() WHERE id = $1', [id])
+        .catch(err => console.error('Error updating summary access time:', err));
       return res.json({ success: true, summary: resource.ai_summary });
     }
 
@@ -325,9 +332,9 @@ app.post('/resources/:id/summarize', authMiddleware, async (req, res) => {
     // 4. Generate summary
     const summary = await generateSummary(textForAi);
 
-    // 5. Save to DB
+    // 5. Save to DB and update access timestamp
     await pool.query(
-      'UPDATE resources SET ai_summary = $1 WHERE id = $2',
+      'UPDATE resources SET ai_summary = $1, summary_last_accessed_at = NOW() WHERE id = $2',
       [summary, id]
     );
 
@@ -874,6 +881,39 @@ app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ success: false, error: 'Internal server error' });
 });
+
+// ============================================================================
+// BACKGROUND TASKS
+// ============================================================================
+
+/**
+ * Automatically clears AI summaries that haven't been accessed for more than 2 days.
+ * Runs every 6 hours.
+ */
+function startSummaryCleanupTask() {
+  const CLEANUP_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
+
+  setInterval(async () => {
+    console.log('[Cleanup Task] Checking for stale AI summaries...');
+    try {
+      const result = await pool.query(`
+        UPDATE resources 
+        SET ai_summary = NULL 
+        WHERE ai_summary IS NOT NULL 
+        AND summary_last_accessed_at < NOW() - INTERVAL '2 days'
+        RETURNING id
+      `);
+      if (result.rowCount > 0) {
+        console.log(`[Cleanup Task] Successfully cleared ${result.rowCount} stale summaries.`);
+      }
+    } catch (error) {
+      console.error('[Cleanup Task] Error clearing stale summaries:', error);
+    }
+  }, CLEANUP_INTERVAL);
+}
+
+// Start background services
+startSummaryCleanupTask();
 
 // ============================================================================
 // SERVER STARTUP

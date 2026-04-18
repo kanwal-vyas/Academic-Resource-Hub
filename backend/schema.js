@@ -29,7 +29,13 @@ async function main() {
     // Add ai_summary column to resources if it doesn't exist
     await client.query(`
       ALTER TABLE resources
-      ADD COLUMN IF NOT EXISTS ai_summary TEXT;
+      ADD COLUMN IF NOT EXISTS ai_summary TEXT,
+      ADD COLUMN IF NOT EXISTS summary_last_accessed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+    `);
+
+    // Initialize existing summary_last_accessed_at with created_at where it is null
+    await client.query(`
+      UPDATE resources SET summary_last_accessed_at = created_at WHERE summary_last_accessed_at IS NULL;
     `);
 
     // Create chat_history table 
