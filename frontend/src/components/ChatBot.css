@@ -10,6 +10,9 @@
   --chatbot-ai-msg: rgba(99, 102, 241, 0.06);
   --chatbot-glow: rgba(99, 102, 241, 0.2);
   --chatbot-input-bg: rgba(255, 255, 255, 0.6);
+  --chatbot-btn-bg: rgba(99, 102, 241, 0.08);
+  --chatbot-btn-text: #4f46e5;
+  --chatbot-chip-bg: rgba(0, 0, 0, 0.03);
 }
 
 .dark {
@@ -21,6 +24,9 @@
   --chatbot-ai-msg: rgba(255, 255, 255, 0.04);
   --chatbot-glow: rgba(99, 102, 241, 0.4);
   --chatbot-input-bg: rgba(0, 0, 0, 0.3);
+  --chatbot-btn-bg: rgba(165, 180, 252, 0.15);
+  --chatbot-btn-text: #a5b4fc;
+  --chatbot-chip-bg: rgba(255, 255, 255, 0.03);
 }
 
 .chatbot-container {
@@ -247,7 +253,7 @@
   align-self: flex-start;
   background: var(--chatbot-ai-msg);
   backdrop-filter: blur(10px);
-  color: #f1f5f9;
+  color: var(--chatbot-text);
   border-bottom-left-radius: 4px;
   border: 1px solid var(--chatbot-glass-border);
   display: flex;
@@ -267,9 +273,9 @@
 }
 
 .chat-action-btn {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  color: #a5b4fc;
+  background: var(--chatbot-btn-bg);
+  border: 1px solid var(--chatbot-glass-border);
+  color: var(--chatbot-btn-text);
   padding: 0.75rem 1.25rem;
   border-radius: 14px;
   font-size: 0.9rem;
@@ -281,7 +287,7 @@
   transition: all 0.3s;
   margin-top: 0.5rem;
   width: fit-content;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .chat-action-btn:hover {
@@ -442,7 +448,7 @@
 .empty-chat h2 {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--chatbot-text);
   margin-bottom: 0.75rem;
   letter-spacing: -0.02em;
 }
@@ -461,7 +467,7 @@
 }
 
 .suggestion-chip {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--chatbot-chip-bg);
   border: 1px solid var(--chatbot-glass-border);
   color: var(--chatbot-text);
   padding: 0.8rem 1rem;
@@ -476,9 +482,10 @@
 }
 
 .suggestion-chip:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--chatbot-btn-bg);
+  border-color: var(--chatbot-primary);
   transform: translateX(4px);
+  color: var(--chatbot-btn-text);
 }
 
 .chip-icon {
