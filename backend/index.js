@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
+import http from 'http';
 import express from 'express';
 import Busboy from 'busboy';
 import { createClient } from '@supabase/supabase-js';
@@ -12,7 +13,9 @@ import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import { extractTextFromPDF, generateSummary, chatWithAI } from './utils/ai.js';
+import { initSocketIO } from './socket.js';
 const app = express();
+const server = http.createServer(app);
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -101,7 +104,7 @@ function generateStoragePath(subjectId, offeringId, unitId, filename) {
 // ============================================================================
 
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:5100"],
+  origin: ["http://localhost:5173", "http://localhost:5100"],
   credentials: true
 }));
 
@@ -920,8 +923,13 @@ startSummaryCleanupTask();
 // ============================================================================
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+
+// Attach Socket.IO to the shared HTTP server before listening
+initSocketIO(server);
+
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`[Socket.IO] WebSocket server ready on port ${PORT}`);
 });
 
 export default app;

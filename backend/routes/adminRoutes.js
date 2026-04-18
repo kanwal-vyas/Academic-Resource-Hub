@@ -3,6 +3,7 @@ import pool from '../db.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { getIO } from '../socket.js';
 
 dotenv.config();
 
@@ -356,13 +357,42 @@ router.get('/resources/all', authMiddleware, adminOnly, async (req, res) => {
 router.put('/resources/:id/verify', authMiddleware, adminOnly, async (req, res) => {
   const { id } = req.params;
   try {
+    // 1. Update resource as verified
     const result = await pool.query(
       `UPDATE resources
        SET is_verified = true, verified_by = $1, verified_at = NOW()
-       WHERE id = $2 RETURNING id, title, is_verified`,
+       WHERE id = $2
+       RETURNING id, title, is_verified, verified_at, contributor_id, subject_id`,
       [req.user.id, id]
     );
     if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Resource not found' });
+
+    const resource = result.rows[0];
+
+    // 2. Fetch contributor name and subject name for the notification payload
+    const contextResult = await pool.query(
+      `SELECT u.full_name AS contributor_name, s.name AS subject_name
+       FROM users u, subjects s
+       WHERE u.id = $1 AND s.id = $2`,
+      [resource.contributor_id, resource.subject_id]
+    );
+    const ctx = contextResult.rows[0] || {};
+
+    // 3. Broadcast real-time notification to all connected clients
+    try {
+      getIO().emit('resource:verified', {
+        resourceId:      resource.id,
+        title:           resource.title,
+        contributorName: ctx.contributor_name || 'Unknown',
+        subjectName:     ctx.subject_name     || 'Unknown',
+        verifiedAt:      resource.verified_at,
+      });
+      console.log(`[Socket.IO] Emitted resource:verified for resource ${resource.id}`);
+    } catch (socketErr) {
+      // Non-fatal — DB already updated, don't fail the HTTP response
+      console.error('[Socket.IO] Emit failed (non-fatal):', socketErr.message);
+    }
+
     res.json({ success: true, data: result.rows[0] });
   } catch (err) {
     console.error('Error verifying resource:', err);
