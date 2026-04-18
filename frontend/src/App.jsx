@@ -15,6 +15,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ContactAdmin from "./pages/ContactAdmin";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { ResourceProvider } from "./context/ResourceContext";
+import ChatBot from "./components/ChatBot";
 import "./App.css";
 
 function App({ onToggleTheme, isDark }) {
@@ -39,8 +41,9 @@ function App({ onToggleTheme, isDark }) {
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
 
   return (
-    <div className="app">
-      {user && (
+    <ResourceProvider>
+      <div className="app">
+        {user && (
         <Navbar
           isDark={isDark}
           onToggleTheme={onToggleTheme}
@@ -160,8 +163,10 @@ function App({ onToggleTheme, isDark }) {
 
           </Routes>
         </main>
+        </div>
+        {user && <ChatBot />}
       </div>
-    </div>
+    </ResourceProvider>
   );
 }
 

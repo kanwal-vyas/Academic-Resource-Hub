@@ -32,6 +32,19 @@ async function main() {
       ADD COLUMN IF NOT EXISTS ai_summary TEXT;
     `);
 
+    // Create chat_history table 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS chat_history (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        resource_id UUID REFERENCES resources(id) ON DELETE SET NULL,
+        message TEXT NOT NULL,
+        role VARCHAR(10) NOT NULL CHECK (role IN ('user', 'model')),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_chat_history_user_id ON chat_history(user_id);
+    `);
+
     await client.query("COMMIT");
     console.log("Database schema updated successfully.");
   } catch (err) {

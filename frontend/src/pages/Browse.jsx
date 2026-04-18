@@ -4,6 +4,7 @@ import { supabase } from "../supabaseClient";
 import { useAuth } from "../auth/AuthContext";
 import { API_BASE_URL } from "../utils/api";
 import SummaryModal from "../components/SummaryModal";
+import { useResourceContext } from "../context/ResourceContext";
 import "../styles/browse.css";
 
 const RESOURCE_TYPE_CONFIG = {
@@ -115,6 +116,7 @@ function Browse() {
   const { user } = useAuth();
   const navigate = useNavigate(); // ✅ moved inside component
   const { resources, loading, error, refetch } = useResources(user);
+  const { setContextResource, clearContextResource } = useResourceContext();
 
   // ✅ Fetch DB role from /me so isAdmin is accurate
   const [dbRole, setDbRole] = useState(null);
@@ -195,6 +197,7 @@ function Browse() {
 
       // Open modal with the new summary
       const res = resources.find(r => r.id === resourceId);
+      setContextResource(res); // Set context for chatbot
       setActiveSummary({
         title: res?.title || "Resource Snapshot",
         summary: newSummary
@@ -291,6 +294,7 @@ function Browse() {
 
   const handleViewResource = async (resource) => {
     setSelectedResourceId(resource.id);
+    setContextResource(resource); // Set context for chatbot
 
     try {
       if (resource.content_type === "external_link") {
@@ -562,7 +566,10 @@ function Browse() {
         {/* Global Floating Summary Board */}
         <SummaryModal 
           isOpen={!!activeSummary}
-          onClose={() => setActiveSummary(null)}
+          onClose={() => {
+            setActiveSummary(null);
+            clearContextResource();
+          }}
           title={activeSummary?.title}
           summary={activeSummary?.summary}
         />

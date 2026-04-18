@@ -10,7 +10,8 @@ import meRouter from "./routes/me.js";
 import facultyRoutes from './routes/facultyRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
-import { extractTextFromPDF, generateSummary } from './utils/ai.js';
+import aiRoutes from './routes/aiRoutes.js';
+import { extractTextFromPDF, generateSummary, chatWithAI } from './utils/ai.js';
 const app = express();
 
 // Initialize Supabase client
@@ -108,6 +109,7 @@ app.use("/", meRouter);
 app.use('/api/faculty', facultyRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/chat', aiRoutes);
 
 app.get('/resources', authMiddleware, async (req, res) => {
   try {
@@ -335,6 +337,7 @@ app.post('/resources/:id/summarize', authMiddleware, async (req, res) => {
     res.status(500).json({ success: false, error: error.message || 'Failed to generate summary' });
   }
 });
+
 
 app.get('/courses', authMiddleware, async (req, res) => {
   try {

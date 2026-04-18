@@ -8,20 +8,23 @@
 .notif-bell-btn {
   position: relative;
   background: transparent;
-  border: none;
+  border: 1.5px solid var(--border);
   cursor: pointer;
-  padding: 6px 8px;
-  border-radius: 10px;
+  padding: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
-  font-size: 1.3rem;
+  transition: all var(--transition-base, 0.2s);
+  font-size: 1.25rem;
   line-height: 1;
 }
 
 .notif-bell-btn:hover {
-  background: rgba(139, 92, 246, 0.12);
+  background: var(--surface-secondary);
+  border-color: var(--border-dark);
 }
 
 .notif-bell-icon {
@@ -39,8 +42,8 @@
 /* Badge */
 .notif-badge {
   position: absolute;
-  top: 2px;
-  right: 2px;
+  top: 6px;
+  right: 6px;
   min-width: 18px;
   height: 18px;
   padding: 0 4px;
