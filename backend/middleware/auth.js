@@ -124,7 +124,10 @@ export async function authMiddleware(req, res, next) {
       email,
       role: dbUser.role,
       is_verified: dbUser.is_verified,
+      course_id: dbUser.course_id,
+      preferred_course: dbUser.preferred_course
     };
+
 
     next();
   } catch (err) {

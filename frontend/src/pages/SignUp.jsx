@@ -11,29 +11,12 @@ function SignUp({ isDark, onToggleTheme }) {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [courses, setCourses] = useState([]);
-  const [selectedCourseId, setSelectedCourseId] = useState("");
-  const [preferredCourse, setPreferredCourse] = useState("");
-  const [isOtherSelected, setIsOtherSelected] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
+
 
   const isFaculty = email.toLowerCase().endsWith("@rru.ac.in") && !email.toLowerCase().includes("student");
 
-  useEffect(() => {
-    fetchCourses();
-  }, []);
 
-  const fetchCourses = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/courses`);
-      const result = await response.json();
-      if (result.success) {
-        setCourses(result.data);
-      }
-    } catch (err) {
-      console.error("Failed to fetch courses:", err);
-    }
-  };
 
   // ❌ REMOVED: local theme state, useEffect, toggleTheme
 
@@ -46,15 +29,7 @@ function SignUp({ isDark, onToggleTheme }) {
       return;
     }
 
-    if (!isFaculty && (!selectedCourseId && !isOtherSelected)) {
-      setError("Please select your course");
-      return;
-    }
 
-    if (!isFaculty && isOtherSelected && !preferredCourse.trim()) {
-      setError("Please specify your custom course name");
-      return;
-    }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
@@ -79,8 +54,7 @@ function SignUp({ isDark, onToggleTheme }) {
       options: { 
         data: { 
           full_name: fullName.trim(),
-          course_id: isOtherSelected ? null : selectedCourseId,
-          preferred_course: isOtherSelected ? preferredCourse.trim() : null
+
         } 
       },
     });
@@ -127,7 +101,7 @@ function SignUp({ isDark, onToggleTheme }) {
             <h1 className="auth-title">Academic Resource Hub</h1>
             <p className="auth-subtitle">Create an account to access or share academic resources</p>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '8px', marginBottom: '16px' }}>
-              <strong>Faculty:</strong> Please use your <code>@rru.ac.in</code> email to automatically receive faculty access.
+              <strong>Note:</strong> All users must use their college email ID for registration.
             </div>
           </div>
 
@@ -165,51 +139,7 @@ function SignUp({ isDark, onToggleTheme }) {
                 />
               </div>
 
-              {!isFaculty && (
-                <>
-                  <div className="form-group animate-fadeInUp">
-                    <label className="form-label">Course / Program</label>
-                    <select
-                      className="form-input"
-                      value={isOtherSelected ? "other" : selectedCourseId}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === "other") {
-                          setIsOtherSelected(true);
-                          setSelectedCourseId("");
-                        } else {
-                          setIsOtherSelected(false);
-                          setSelectedCourseId(val);
-                        }
-                      }}
-                      disabled={loading}
-                    >
-                      <option value="">Select your course</option>
-                      {courses.map((course) => (
-                        <option key={course.id} value={course.id}>
-                          {course.name} ({course.code})
-                        </option>
-                      ))}
-                      <option value="other">Other (Specify below)</option>
-                    </select>
-                  </div>
 
-                  {isOtherSelected && (
-                    <div className="form-group animate-fadeInUp">
-                      <label className="form-label" htmlFor="preferredCourse">Custom Course Name</label>
-                      <input
-                        id="preferredCourse"
-                        type="text"
-                        className="form-input"
-                        placeholder="Enter your course name"
-                        value={preferredCourse}
-                        onChange={(e) => setPreferredCourse(e.target.value)}
-                        disabled={loading}
-                      />
-                    </div>
-                  )}
-                </>
-              )}
 
               <div className="form-group">
                 <label className="form-label" htmlFor="password">Password</label>
