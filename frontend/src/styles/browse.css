@@ -21,11 +21,16 @@
 }
 
 .page-header h1 {
-  font-size: 2.25rem;
+  font-family: var(--font-display);
+  font-size: 2.5rem;
   font-weight: 700;
   color: var(--primary);
-  margin: 0 0 var(--space-sm);
+  margin: 0 0 var(--space-xs);
   letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
 }
 
 .page-subtitle {
@@ -65,11 +70,12 @@
 }
 
 .filter-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  opacity: 0.85;
 }
 
 .filter-select {
@@ -201,7 +207,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: var(--space-xl);
-  align-items: start; /* Prevent cards from stretching to match tallest in row */
+  align-items: stretch; /* Cards will match the tallest in the row */
 }
 
 .resource-card {
@@ -215,6 +221,7 @@
   overflow: hidden;
   transition: all 0.4s var(--ease-expo);
   gap: var(--space-md);
+  height: 100%; /* Ensure card fills grid cell */
 }
 
 .resource-card:hover {
@@ -279,11 +286,12 @@
 }
 
 .resource-title {
-  font-size: 1.125rem;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--primary);
   margin: 0 0 var(--space-xs);
-  line-height: 1.4;
+  line-height: 1.3;
   letter-spacing: -0.01em;
 }
 
@@ -397,7 +405,7 @@
   justify-content: center;
   padding: 10px var(--space-md);
   background-color: var(--accent);
-  color: white;
+  color: #fff; /* White text on sage */
   border: none;
   font-weight: 700;
   font-size: 0.9375rem;
@@ -406,8 +414,16 @@
 }
 
 .resource-action-primary:hover {
-  background-color: var(--primary);
-  transform: scale(1.02);
+  background-color: var(--accent-dark, #577a6b); /* Use a darker sage on hover */
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Ensure ultra-readable text in dark mode on hover */
+.dark .resource-action-primary:hover {
+  background-color: var(--accent-light); /* Switch to light sage */
+  color: #0a0f1a !important; /* Force darkest navy text */
 }
 
 .owner-menu {

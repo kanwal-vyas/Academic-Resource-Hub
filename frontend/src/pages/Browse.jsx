@@ -6,6 +6,7 @@ import { API_BASE_URL } from "../utils/api";
 import SummaryModal from "../components/SummaryModal";
 import { useResourceContext } from "../context/ResourceContext";
 import { useToast } from "../context/ToastContext";
+import CustomSelect from "../components/CustomSelect";
 import "../styles/browse.css";
 
 const RESOURCE_TYPE_CONFIG = {
@@ -120,8 +121,8 @@ function Browse() {
   const { resources, loading, error, refetch } = useResources(user);
   const { setContextResource, clearContextResource } = useResourceContext();
 
-  // ✅ Fetch DB role from /me so isAdmin is accurate
   const [dbRole, setDbRole] = useState(null);
+  const [allFaculties, setAllFaculties] = useState([]);
 
   useEffect(() => {
     async function fetchMe() {
@@ -144,6 +145,27 @@ function Browse() {
   }, [user]);
 
   const isAdmin = dbRole === "admin";
+
+  useEffect(() => {
+    async function fetchAllFaculties() {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+        if (!token) return;
+
+        const res = await fetch(`${API_BASE_URL}/faculty`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const result = await res.json();
+          setAllFaculties(result.data || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch all faculties:", err);
+      }
+    }
+    if (user) fetchAllFaculties();
+  }, [user]);
 
   const handleDelete = async (resourceId) => {
     const confirmDelete = window.confirm(
@@ -264,10 +286,24 @@ function Browse() {
     new Set(resources.map((r) => r.subject_name).filter(Boolean))
   ).sort();
 
-  // Derive unique faculty
-  const faculties = Array.from(
+  // Derive unique faculty from resources (as fallback/active list)
+  const activeFacultiesFromResources = Array.from(
     new Set(resources.map((r) => r.faculty_name).filter(Boolean))
   ).sort();
+
+  // Combine with full list from DB to ensure everyone shows up
+  const faculties = Array.from(
+    new Set([
+      ...allFaculties.map(f => f.full_name),
+      ...activeFacultiesFromResources
+    ])
+  ).sort();
+
+  // Helper to format options for CustomSelect
+  const formatOptions = (list, allLabel) => [
+    { value: "", label: allLabel },
+    ...list.map(item => ({ value: item, label: item }))
+  ];
 
   // Filter resources
   const filteredResources = resources
@@ -394,99 +430,81 @@ function Browse() {
             <div className="filter-grid">
               {/* Course Filter */}
               <FilterGroup label="Course">
-                <select
-                  className="filter-select"
+                <CustomSelect
+                  options={formatOptions(courses, "All Courses")}
                   value={selectedCourse}
-                  onChange={(e) => handleCourseChange(e.target.value)}
-                >
-                  <option value="">All Courses</option>
-                  {courses.map((course) => (
-                    <option key={course} value={course}>
-                      {course}
-                    </option>
-                  ))}
-                </select>
+                  onChange={handleCourseChange}
+                  placeholder="All Courses"
+                />
               </FilterGroup>
 
               {/* Unit Filter */}
               <FilterGroup label="Syllabus Unit">
-                <select
-                  className="filter-select"
+                <CustomSelect
+                  options={[
+                    { value: "", label: "All Units" },
+                    ...unitsForCourse.map((u) => ({
+                      value: u.unit_number,
+                      label: `Unit ${u.unit_number}: ${u.unit_title}`,
+                    })),
+                  ]}
                   value={selectedUnit}
-                  onChange={(e) => handleUnitChange(e.target.value)}
-                  disabled={!selectedCourse}
-                >
-                  <option value="">All Units</option>
-                  {unitsForCourse.map((unit) => (
-                    <option key={unit.unit_number} value={unit.unit_number}>
-                      Unit {unit.unit_number}: {unit.unit_title}
-                    </option>
-                  ))}
-                </select>
+                  onChange={handleUnitChange}
+                  placeholder="All Units"
+                />
               </FilterGroup>
 
               {/* Subject Filter */}
               <FilterGroup label="Subject">
-                <select
-                  className="filter-select"
+                <CustomSelect
+                  options={formatOptions(subjects, "All Subjects")}
                   value={selectedSubject}
-                  onChange={(e) => setSelectedSubject(e.target.value)}
-                >
-                  <option value="">All Subjects</option>
-                  {subjects.map((subject) => (
-                    <option key={subject} value={subject}>
-                      {subject}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSelectedSubject}
+                  placeholder="All Subjects"
+                />
               </FilterGroup>
 
               {/* Faculty Filter */}
               <FilterGroup label="Faculty">
-                <select
-                  className="filter-select"
+                <CustomSelect
+                  options={formatOptions(faculties, "All Faculty")}
                   value={selectedFaculty}
-                  onChange={(e) => setSelectedFaculty(e.target.value)}
-                >
-                  <option value="">All Faculty</option>
-                  {faculties.map((faculty) => (
-                    <option key={faculty} value={faculty}>
-                      {faculty}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSelectedFaculty}
+                  placeholder="All Faculty"
+                />
               </FilterGroup>
 
-              {/* Type Filter */}
+              {/* Resource Type Filter */}
               <FilterGroup label="Resource Type">
-                <select
-                  className="filter-select"
+                <CustomSelect
+                  options={[
+                    { value: "all", label: "All Types" },
+                    { value: "lecture_notes", label: "Lecture Notes" },
+                    { value: "question_paper", label: "Question Paper" },
+                    { value: "research_paper", label: "Research Paper" },
+                    { value: "project_material", label: "Project Material" },
+                    { value: "other", label: "Other" },
+                  ]}
                   value={typeFilter}
-                  onChange={(e) => setTypeFilter(e.target.value)}
-                >
-                  <option value="all">All Types</option>
-                  {resourceTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {getResourceTypeDisplay(type).label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setTypeFilter}
+                  placeholder="All Types"
+                />
               </FilterGroup>
 
               {/* Year Filter */}
               <FilterGroup label="Academic Year">
-                <select
-                  className="filter-select"
-                  value={yearFilter}
-                  onChange={(e) => setYearFilter(e.target.value)}
-                >
-                  <option value="all">All Years</option>
-                  {academicYears.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
+                <CustomSelect
+                  options={[
+                    { value: "all", label: "All Years" },
+                    ...academicYears.map((year) => ({
+                      value: String(year),
+                      label: `AY ${year}`,
+                    })),
+                  ]}
+                  value={String(yearFilter)}
+                  onChange={setYearFilter}
+                  placeholder="All Years"
+                />
               </FilterGroup>
             </div>
           </div>

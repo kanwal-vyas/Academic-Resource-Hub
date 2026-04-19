@@ -233,7 +233,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: var(--space-xl);
-  align-items: start; /* Prevent cards from stretching to match tallest in row */
+  align-items: stretch; /* Cards will match the tallest in the row */
 }
 
 .resource-card {
@@ -247,6 +247,7 @@
   overflow: hidden;
   transition: all 0.4s var(--ease-expo);
   gap: var(--space-md);
+  height: 100%; /* Ensure card fills grid cell */
 }
 
 .resource-card:hover {

@@ -270,15 +270,32 @@ function ResourceCard({ resource, isSelected, onView }) {
 
       <footer className="resource-meta">
         <div className="meta-left">
-          <span className="meta-item">📘 {resource.subject_name}</span>
+          <div className="meta-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 22H20" />
+              <path d="M4 19.5V5A2.5 2.5 0 0 1 6.5 2.5H20v14.5" />
+            </svg>
+            <span>{resource.subject_name}</span>
+          </div>
           {resource.faculty_name && (
-            <span className="meta-item">🎓 Taught by {resource.faculty_name}</span>
+            <div className="meta-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 10v6M2 10l10-5 10 5-10 5zM6 12v5c3 3 9 3 12 0v-5" />
+              </svg>
+              <span>{resource.faculty_name}</span>
+            </div>
           )}
         </div>
         <div className="meta-right">
-          <span className="meta-item">{contributorTypeFormatted}</span>
+          <span className="meta-sub">{contributorTypeFormatted}</span>
           {resource.contributor_is_verified ? (
-            <span className="verified-badge" title="Verified Contributor">✔ Verified</span>
+            <span className="verified-badge" title="Verified Contributor">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Verified
+            </span>
           ) : (
             <span className="unverified-badge" title="Unverified Contributor">Unverified</span>
           )}
@@ -290,7 +307,10 @@ function ResourceCard({ resource, isSelected, onView }) {
         onClick={() => onView(resource)}
         aria-label={`View ${resource.title}`}
       >
-        {isSelected ? "Opened ✓" : "View Resource"}
+        <span>{isSelected ? "Opened" : "View Resource"}</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />
+        </svg>
       </button>
     </article>
   );

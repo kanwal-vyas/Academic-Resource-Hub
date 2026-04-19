@@ -1,0 +1,143 @@
+.custom-select-container {
+  position: relative;
+  width: 100%;
+  font-family: inherit;
+  user-select: none;
+}
+
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background-color: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 48px;
+}
+
+.custom-select-trigger:hover {
+  border-color: var(--interaction);
+  background-color: var(--surface-secondary);
+}
+
+.custom-select-container.is-open .custom-select-trigger {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow, rgba(107, 142, 127, 0.15));
+}
+
+.custom-select-value {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.custom-select-value.is-placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.custom-select-icon {
+  margin-left: 12px;
+  color: var(--text-secondary);
+  transition: transform 0.3s var(--ease-expo);
+}
+
+.custom-select-container.is-open .custom-select-icon {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+/* ── Dropdown List ── */
+.custom-select-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background-color: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  overflow: hidden;
+  animation: dropdownFadeIn 0.2s var(--ease-expo);
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.custom-select-list {
+  list-style: none;
+  padding: 6px;
+  margin: 0;
+  max-height: 220px; /* Force scroll after ~5.5 items */
+  overflow-y: auto;
+}
+
+/* Custom Scrollbar */
+.custom-select-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-select-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-select-list::-webkit-scrollbar-thumb {
+  background: var(--border-dark);
+  border-radius: 10px;
+}
+
+.custom-select-list::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+.custom-select-option {
+  padding: 10px 12px;
+  font-size: 0.875rem;
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.custom-select-option:hover {
+  background-color: var(--accent-muted, rgba(107, 142, 127, 0.1));
+  color: var(--accent);
+}
+
+.custom-select-option.is-selected {
+  background-color: var(--accent);
+  color: white !important;
+  font-weight: 600;
+}
+
+.custom-select-option.is-empty {
+  color: var(--text-muted);
+  font-style: italic;
+  cursor: default;
+  text-align: center;
+  padding: 20px 0;
+}
+
+/* ── Dark Mode Tweaks ── */
+.dark .custom-select-dropdown {
+  background-color: #1a2332;
+  border-color: #2d3e50;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.dark .custom-select-option:hover {
+  background-color: rgba(142, 178, 159, 0.15);
+}
+
+.dark .custom-select-list::-webkit-scrollbar-thumb {
+  background: #3d4f65;
+}

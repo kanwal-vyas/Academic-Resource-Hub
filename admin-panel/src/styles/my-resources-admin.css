@@ -36,13 +36,13 @@
 
 .mr-btn--view {
   background: var(--accent) !important;
-  color: #1a2332 !important; /* Force dark text on light sage */
+  color: #0c0f1a !important; /* Force darkest navy on sage for readability */
   width: 100%;
 }
 
 .mr-btn--view:hover:not(:disabled) {
-  background: var(--primary);
-  color: #fff;
+  background: var(--accent-dark) !important;
+  color: #fff !important;
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }

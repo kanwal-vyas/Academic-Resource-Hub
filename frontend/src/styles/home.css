@@ -13,11 +13,15 @@
 }
 
 .home-page h2 {
-  font-size: 1.75rem;
+  font-size: 2.25rem;
   font-weight: 700;
   color: var(--primary);
   margin: 0 0 var(--space-sm);
   letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
 }
 
 .text-muted {
@@ -49,23 +53,46 @@
 }
 
 .resource-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  background: var(--surface);
-  border: 2px solid var(--border);
+  background: var(--card-bg, rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  padding: var(--space-lg);
-  transition: all 0.4s var(--ease-expo);
+  padding: var(--space-xl);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  box-shadow: 0 4px 20px -10px rgba(0, 0, 0, 0.1);
+}
+
+/* Liquid Accent Stripe */
+.resource-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s ease;
+  z-index: 1;
+  opacity: 0.8;
 }
 
 .resource-card:hover {
-  transform: translateY(-8px) scale(1.02);
+  transform: translateY(-8px);
   border-color: var(--accent);
+  background: var(--card-hover-bg, rgba(255, 255, 255, 0.06));
   box-shadow: 
-    0 20px 40px -20px rgba(0, 0, 0, 0.15),
-    0 0 20px rgba(107, 142, 127, 0.1);
+    0 25px 50px -12px rgba(0, 0, 0, 0.2),
+    0 0 15px var(--card-glow, rgba(107, 142, 127, 0.1));
+}
+
+.resource-card:hover::before {
+  width: 6px;
+  opacity: 1;
 }
 
 .resource-meta {
@@ -101,12 +128,14 @@
 }
 
 .resource-header h3 {
-  font-size: 1.25rem;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
   font-weight: 700;
   color: var(--primary);
   margin: 0;
   flex: 1;
   min-width: 250px;
+  letter-spacing: -0.01em;
 }
 
 .resource-description {
@@ -137,14 +166,20 @@
   align-items: flex-end;
   gap: var(--space-xs);
   flex-shrink: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .meta-item {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
+  font-weight: 700;
   color: var(--text-secondary);
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.85;
 }
 
 .meta-sub {
@@ -153,32 +188,53 @@
 }
 
 .resource-button {
+  position: relative;
   margin-top: var(--space-md);
-  padding: var(--space-md) var(--space-xl);
+  padding: 12px var(--space-xl);
   border-radius: var(--radius-md);
   border: none;
-  background-color: var(--accent);
-  color: var(--surface);
-  font-weight: 600;
-  font-size: 0.95rem;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+  color: white !important;
+  font-weight: 700;
+  font-size: 0.9375rem;
   cursor: pointer;
-  transition: all var(--transition-base);
-  box-shadow: var(--shadow-sm);
+  transition: all 0.3s var(--ease-expo);
+  box-shadow: 0 4px 12px var(--shadow-color, rgba(107, 142, 127, 0.2));
+  overflow: hidden;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.resource-button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
 }
 
 .resource-button:hover {
-  background-color: var(--primary);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 8px 20px var(--shadow-color, rgba(107, 142, 127, 0.3));
+  filter: brightness(1.05);
+}
+
+.resource-button:hover::after {
+  left: 100%;
 }
 
 .resource-button:active {
   transform: translateY(0);
-  box-shadow: var(--shadow-sm);
 }
 
 .resource-button.selected {
-  background-color: var(--primary);
+  background: var(--primary);
   box-shadow: var(--shadow-lg);
 }
 
@@ -227,11 +283,36 @@
 }
 
 .dark .view-all-button {
-  background-color: rgba(16, 185, 129, 0.05);
+  background-color: rgba(255, 255, 255, 0.03);
 }
 
 .dark .view-all-button:hover {
   background-color: var(--accent);
+}
+
+/* ── Theme Specific Card Adjustments ── */
+.dark .resource-card {
+  --card-bg: rgba(13, 17, 23, 0.4);
+  --card-hover-bg: rgba(20, 27, 38, 0.6);
+  --card-glow: rgba(142, 178, 159, 0.15);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.light .resource-card,
+:root:not(.dark) .resource-card {
+  --card-bg: rgba(255, 255, 255, 0.7);
+  --card-hover-bg: rgba(255, 255, 255, 0.9);
+  --card-glow: rgba(107, 142, 127, 0.08);
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark .resource-button {
+  --shadow-color: rgba(0, 0, 0, 0.3);
+}
+
+.light .resource-button,
+:root:not(.dark) .resource-button {
+  --shadow-color: rgba(107, 142, 127, 0.15);
 }
 
 /* ===============================
