@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../auth/AuthContext";
+import { useToast } from "../context/ToastContext";
 import { LoadingState, ErrorState, EmptyState } from "./Browse";
 import SummaryModal from "../components/SummaryModal";
 import { API_BASE_URL } from "../utils/api";
@@ -101,6 +102,7 @@ function useMyResources(user) {
 function MyResources() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const { resources, loading, error, removeLocally, refetch } = useMyResources(user);
 
   // id of card showing the inline confirm banner
@@ -167,10 +169,15 @@ function MyResources() {
 
   const handleSummarize = async (resourceId) => {
     try {
-      const token = await getToken();
-      if (!token) return;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) {
+        showToast("Please log in to use the AI summarizer.", "warning");
+        return;
+      }
 
-      setActiveSummary({ title: "", summary: null });
+      const res = resources.find(r => r.id === resourceId);
+      setActiveSummary({ title: res?.title || "Resource", summary: null });
 
       const response = await fetch(`${API_BASE_URL}/resources/${resourceId}/summarize`, {
         method: "POST",
@@ -180,6 +187,10 @@ function MyResources() {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          showToast("Your session has expired. Please log in again.", "error");
+          throw new Error("Session expired");
+        }
         const errData = await response.json();
         throw new Error(errData.error || "Failed to generate summary");
       }
@@ -189,7 +200,6 @@ function MyResources() {
 
       await refetch();
 
-      const res = resources.find(r => r.id === resourceId);
       setActiveSummary({
         title: res?.title || "Resource Snapshot",
         summary: newSummary
@@ -197,7 +207,9 @@ function MyResources() {
     } catch (err) {
       console.error("Summarization failed:", err);
       setActiveSummary(null);
-      alert(err.message);
+      if (err.message !== "Session expired") {
+        showToast(err.message, "error");
+      }
     }
   };
 

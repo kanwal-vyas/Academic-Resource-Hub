@@ -8,6 +8,8 @@ import ResourceVerification from './pages/ResourceVerification';
 import UserManagement from './pages/UserManagement';
 import FacultyList from './pages/FacultyList';
 import Messages from './pages/Messages';
+import { ToastProvider } from './context/ToastContext';
+import './styles/toast.css';
 
 function AdminRoute({ children }) {
   const { user, loading } = useAuth();
@@ -56,39 +58,41 @@ function App() {
   const { user, loading } = useAuth();
 
   return (
-    <Routes>
-      <Route
-        path="/login"
-        element={
-          !loading && user
-            ? <Navigate to="/" replace />
-            : <AdminLogin />
-        }
-      />
+    <ToastProvider>
+      <Routes>
+        <Route
+          path="/login"
+          element={
+            !loading && user
+              ? <Navigate to="/" replace />
+              : <AdminLogin />
+          }
+        />
 
-      <Route
-        path="/"
-        element={
-          <AdminRoute>
-            <Dashboard />
-          </AdminRoute>
-        }
-      />
+        <Route
+          path="/"
+          element={
+            <AdminRoute>
+              <Dashboard />
+            </AdminRoute>
+          }
+        />
 
-      <Route path="/faculty-list" element={<AdminRoute><FacultyList /></AdminRoute>} />
-      <Route path="/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
-      <Route path="/content" element={<AdminRoute><ContentManagement /></AdminRoute>} />
-      <Route path="/resources" element={<AdminRoute><ResourceVerification /></AdminRoute>} />
-      <Route path="/messages" element={<AdminRoute><Messages /></AdminRoute>} />
+        <Route path="/faculty-list" element={<AdminRoute><FacultyList /></AdminRoute>} />
+        <Route path="/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
+        <Route path="/content" element={<AdminRoute><ContentManagement /></AdminRoute>} />
+        <Route path="/resources" element={<AdminRoute><ResourceVerification /></AdminRoute>} />
+        <Route path="/messages" element={<AdminRoute><Messages /></AdminRoute>} />
 
-      <Route
-        path="*"
-        element={
-          loading ? null :
-          user ? <Navigate to="/" replace /> : <Navigate to="/login" replace />
-        }
-      />
-    </Routes>
+        <Route
+          path="*"
+          element={
+            loading ? null :
+            user ? <Navigate to="/" replace /> : <Navigate to="/login" replace />
+          }
+        />
+      </Routes>
+    </ToastProvider>
   );
 }
 

@@ -69,7 +69,7 @@ const SummaryModal = ({ isOpen, onClose, summary, title }) => {
             </svg>
           </button>
         </header>
-        
+
         <div className="summary-modal-content">
           <div className="summary-resource-info">
             <span className="info-label">Resource:</span>
@@ -77,9 +77,9 @@ const SummaryModal = ({ isOpen, onClose, summary, title }) => {
           </div>
           <div className="summary-text-container">
             {summary ? (
-               <div className="markdown-content">
-                 {renderSummary(summary)}
-               </div>
+              <div className="markdown-content">
+                {renderSummary(summary)}
+              </div>
             ) : (
               <div className="summary-loading">
                 <div className="ai-pulse-ring"></div>
@@ -88,7 +88,7 @@ const SummaryModal = ({ isOpen, onClose, summary, title }) => {
             )}
           </div>
         </div>
-        
+
         <footer className="summary-modal-footer">
           <p>Powered by Gemini 1.5 Flash</p>
           <button className="summary-modal-action" onClick={onClose}>Done</button>

@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../auth/AuthContext";
 import FacultyCard from "../components/FacultyCard";
+import { useToast } from "../context/ToastContext";
 import { API_BASE_URL } from "../utils/api";
 import "../styles/home.css";
 
@@ -127,6 +128,7 @@ function useLatestFaculty(user) {
 // ===============================
 function Home() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const { resources, loading, error } = useLatestResources(user);
   const { faculty, loading: facultyLoading, error: facultyError } = useLatestFaculty(user);
   const [selectedResourceId, setSelectedResourceId] = useState(null);
@@ -159,8 +161,8 @@ function Home() {
         window.open(data.signedUrl, "_blank", "noopener,noreferrer");
       }
     } catch (err) {
-      console.error("Error viewing resource:", err);
-      alert("Unable to open resource. Please try again.");
+      console.error("View failed", err);
+      showToast("Unable to open resource. Please try again.", "error");
     }
   };
 

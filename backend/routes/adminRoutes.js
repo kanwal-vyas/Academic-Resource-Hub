@@ -313,14 +313,20 @@ router.get('/resources/pending', authMiddleware, adminOnly, async (req, res) => 
   try {
     const result = await pool.query(`
       SELECT r.id, r.title, r.description, r.resource_type, r.content_type,
-        r.external_url, r.created_at, r.is_verified, r.ai_summary,
+        r.external_url, r.storage_path, r.created_at, r.is_verified, r.ai_summary,
         s.code AS subject_code, s.name AS subject_name,
         c.name AS course_name,
-        u.full_name AS contributor_name, u.email AS contributor_email, u.role AS contributor_role
+        u.full_name AS contributor_name, u.email AS contributor_email, u.role AS contributor_role,
+        ay.start_year, ay.end_year, un.unit_number,
+        fac.full_name AS faculty_name
       FROM resources r
       JOIN subjects s ON r.subject_id = s.id
       JOIN courses c ON s.course_id = c.id
       JOIN users u ON r.contributor_id = u.id
+      LEFT JOIN subject_offerings so ON r.subject_offering_id = so.id
+      LEFT JOIN academic_years ay ON so.academic_year_id = ay.id
+      LEFT JOIN units un ON r.unit_id = un.id
+      LEFT JOIN users fac ON so.faculty_id = fac.id
       WHERE r.is_verified = false
       ORDER BY r.created_at DESC
     `);
@@ -335,16 +341,22 @@ router.get('/resources/all', authMiddleware, adminOnly, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT r.id, r.title, r.description, r.resource_type, r.content_type,
-        r.external_url, r.created_at, r.is_verified, r.verified_at, r.ai_summary,
+        r.external_url, r.storage_path, r.created_at, r.is_verified, r.verified_at, r.ai_summary,
         s.code AS subject_code, s.name AS subject_name,
         c.name AS course_name,
         u.full_name AS contributor_name, u.email AS contributor_email, u.role AS contributor_role,
-        verifier.full_name AS verified_by_name
+        verifier.full_name AS verified_by_name,
+        ay.start_year, ay.end_year, un.unit_number,
+        fac.full_name AS faculty_name
       FROM resources r
       JOIN subjects s ON r.subject_id = s.id
       JOIN courses c ON s.course_id = c.id
       JOIN users u ON r.contributor_id = u.id
       LEFT JOIN users verifier ON r.verified_by = verifier.id
+      LEFT JOIN subject_offerings so ON r.subject_offering_id = so.id
+      LEFT JOIN academic_years ay ON so.academic_year_id = ay.id
+      LEFT JOIN units un ON r.unit_id = un.id
+      LEFT JOIN users fac ON so.faculty_id = fac.id
       ORDER BY r.created_at DESC
     `);
     res.json({ success: true, data: result.rows });

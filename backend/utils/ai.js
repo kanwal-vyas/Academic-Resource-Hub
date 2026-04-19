@@ -8,18 +8,77 @@ dotenv.config();
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
+import { createCanvas, loadImage } from 'canvas';
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+import Tesseract from 'tesseract.js';
+
 /**
  * Extracts text from a PDF buffer.
+ * Falls back to OCR if digital text is not found.
  * @param {Buffer} buffer 
  * @returns {Promise<string>}
  */
 export async function extractTextFromPDF(buffer) {
   try {
     const data = await pdfParse(buffer);
-    return data.text;
+    let text = data.text || '';
+    
+    // Fallback to OCR if digital text is empty or nearly empty
+    if (text.trim().length < 50) {
+      console.log('No digital text found. Triggering OCR fallback...');
+      text = await performOCR(buffer);
+    }
+    
+    return text;
   } catch (error) {
     console.error("Error extracting text from PDF:", error);
     throw new Error("Failed to extract text from PDF");
+  }
+}
+
+/**
+ * Performs OCR on a PDF by converting pages to images first.
+ * @param {Buffer} buffer 
+ * @returns {Promise<string>}
+ */
+async function performOCR(buffer) {
+  const OCR_PAGE_LIMIT = 10;
+  let ocrText = "";
+
+  try {
+    const uint8Array = new Uint8Array(buffer);
+    const loadingTask = pdfjs.getDocument({
+      data: uint8Array,
+      useSystemFonts: true,
+      disableFontFace: true
+    });
+    
+    const doc = await loadingTask.promise;
+    const numPages = Math.min(doc.numPages, OCR_PAGE_LIMIT);
+    
+    console.log(`Starting OCR for ${numPages} pages...`);
+
+    for (let i = 1; i <= numPages; i++) {
+      const page = await doc.getPage(i);
+      const viewport = page.getViewport({ scale: 2.0 }); // High scale for better OCR
+      const canvas = createCanvas(viewport.width, viewport.height);
+      const context = canvas.getContext('2d');
+
+      await page.render({
+        canvasContext: context,
+        viewport: viewport
+      }).promise;
+
+      const imageBuffer = canvas.toBuffer('image/png');
+      const { data: { text } } = await Tesseract.recognize(imageBuffer, 'eng');
+      ocrText += `--- Page ${i} ---\n${text}\n\n`;
+      console.log(`OCR complete for page ${i}/${numPages}`);
+    }
+
+    return ocrText;
+  } catch (err) {
+    console.error('OCR Process failed:', err);
+    throw new Error('Failed to extract text via OCR fallback');
   }
 }
 
@@ -35,22 +94,26 @@ export async function generateSummary(text) {
   try {
     const prompt = `
       You are an expert academic assistant. Summarize the following academic resource text into a concise "Quick Snapshot".
-      Provide the summary in a clean, structured format (using bullet points where appropriate).
-      Focus on the key concepts, main objectives, and important takeaways.
+      Provide the summary in a clean, structured format.
+      - Use '###' for section titles.
+      - Use '**' for bold labels or key terms.
+      - Use '*' or '-' for bullet points.
+      
+      The summary must focus on key concepts, main objectives, and important takeaways.
       Keep the tone professional and helpful for a student.
       Maximum length: 200 words.
       
       Text to summarize:
-      ${text.substring(0, 30000)} // Limiting text to stay within safe token limits for simple summaries
+      ${text.substring(0, 30000)}
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     return response.text();
   } catch (error) {
     console.error("Error generating summary with Gemini:", error);
-    throw new Error("Failed to generate AI summary");
+    throw new Error(`AI Summarizer Error: ${error.message}`);
   }
 }
 
@@ -76,7 +139,7 @@ export async function chatWithAI(history, userMessage, context = null, globalCon
     }
 
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-flash-latest",
+      model: "gemini-2.0-flash",
       systemInstruction: `
         You are the "Academic Assistant" for the Academic Resource Hub. 
         Your goal is to provide EXTREMELY BRIEF, direct, and helpful answers.
@@ -124,6 +187,6 @@ export async function chatWithAI(history, userMessage, context = null, globalCon
     return response.text();
   } catch (error) {
     console.error("Error in AI chat session:", error);
-    throw new Error("Failed to communicate with AI Assistant");
+    throw new Error(`AI Assistant Error: ${error.message}`);
   }
 }

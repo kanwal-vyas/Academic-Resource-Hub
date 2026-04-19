@@ -16,8 +16,10 @@ import ResetPassword from "./pages/ResetPassword";
 import ContactAdmin from "./pages/ContactAdmin";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ResourceProvider } from "./context/ResourceContext";
+import { ToastProvider } from "./context/ToastContext";
 import ChatBot from "./components/ChatBot";
 import "./App.css";
+import "./styles/toast.css";
 
 function App({ onToggleTheme, isDark }) {
   const { user, loading } = useAuth();
@@ -41,132 +43,134 @@ function App({ onToggleTheme, isDark }) {
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
 
   return (
-    <ResourceProvider>
-      <div className="app">
-        {user && (
-        <Navbar
-          isDark={isDark}
-          onToggleTheme={onToggleTheme}
-          toggleSidebar={toggleSidebar}
-        />
-      )}
-
-      <div className="layout-wrapper">
-        {user && (
-          <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+    <ToastProvider>
+      <ResourceProvider>
+        <div className="app">
+          {user && (
+          <Navbar
+            isDark={isDark}
+            onToggleTheme={onToggleTheme}
+            toggleSidebar={toggleSidebar}
+          />
         )}
 
-        <main className="main-content">
-          <Routes>
+        <div className="layout-wrapper">
+          {user && (
+            <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+          )}
 
-            {/* Public */}
-            <Route
-              path="/login"
-              element={
-                user ? <Navigate to="/" replace /> :
-                <Login isDark={isDark} onToggleTheme={onToggleTheme} />
-              }
-            />
+          <main className="main-content">
+            <Routes>
 
-            <Route
-  path="/signup"
-  element={
-    user ? <Navigate to="/" replace /> :
-    <SignUp isDark={isDark} onToggleTheme={onToggleTheme} />
-  }
-/>
+              {/* Public */}
+              <Route
+                path="/login"
+                element={
+                  user ? <Navigate to="/" replace /> :
+                  <Login isDark={isDark} onToggleTheme={onToggleTheme} />
+                }
+              />
 
-            <Route
-              path="/forgot-password"
-              element={<ForgotPassword isDark={isDark} onToggleTheme={onToggleTheme} />}
-            />
+              <Route
+    path="/signup"
+    element={
+      user ? <Navigate to="/" replace /> :
+      <SignUp isDark={isDark} onToggleTheme={onToggleTheme} />
+    }
+  />
 
-            <Route
-              path="/reset-password"
-              element={<ResetPassword isDark={isDark} onToggleTheme={onToggleTheme} />}
-            />
+              <Route
+                path="/forgot-password"
+                element={<ForgotPassword isDark={isDark} onToggleTheme={onToggleTheme} />}
+              />
 
-            <Route
-              path="/contact"
-              element={<ContactAdmin isDark={isDark} onToggleTheme={onToggleTheme} />}
-            />
+              <Route
+                path="/reset-password"
+                element={<ResetPassword isDark={isDark} onToggleTheme={onToggleTheme} />}
+              />
 
-            {/* Protected */}
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Home />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/contact"
+                element={<ContactAdmin isDark={isDark} onToggleTheme={onToggleTheme} />}
+              />
 
-            <Route
-              path="/browse"
-              element={
-                <ProtectedRoute>
-                  <Browse />
-                </ProtectedRoute>
-              }
-            />
+              {/* Protected */}
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <Home />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route
-              path="/upload"
-              element={
-                <ProtectedRoute>
-                  <UploadResource />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/browse"
+                element={
+                  <ProtectedRoute>
+                    <Browse />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route
-  path="/edit-resource/:id"
-  element={
-    <ProtectedRoute>
-      <UploadResource />
-    </ProtectedRoute>
-  }
-/>
+              <Route
+                path="/upload"
+                element={
+                  <ProtectedRoute>
+                    <UploadResource />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route
-  path="/my-resources"
-  element={
-    <ProtectedRoute>
-      <MyResources />
-    </ProtectedRoute>
-  }
-/>
+              <Route
+    path="/edit-resource/:id"
+    element={
+      <ProtectedRoute>
+        <UploadResource />
+      </ProtectedRoute>
+    }
+  />
 
-            <Route
-              path="/faculty"
-              element={
-                <ProtectedRoute>
-                  <FacultyDirectory />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+    path="/my-resources"
+    element={
+      <ProtectedRoute>
+        <MyResources />
+      </ProtectedRoute>
+    }
+  />
 
-            <Route
-              path="/faculty/:id"
-              element={
-                <ProtectedRoute>
-                  <FacultyProfile />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/faculty"
+                element={
+                  <ProtectedRoute>
+                    <FacultyDirectory />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Fallback */}
-            <Route
-              path="*"
-              element={<Navigate to={user ? "/" : "/login"} replace />}
-            />
+              <Route
+                path="/faculty/:id"
+                element={
+                  <ProtectedRoute>
+                    <FacultyProfile />
+                  </ProtectedRoute>
+                }
+              />
 
-          </Routes>
-        </main>
+              {/* Fallback */}
+              <Route
+                path="*"
+                element={<Navigate to={user ? "/" : "/login"} replace />}
+              />
+
+            </Routes>
+          </main>
+          </div>
+          {user && <ChatBot />}
         </div>
-        {user && <ChatBot />}
-      </div>
-    </ResourceProvider>
+      </ResourceProvider>
+    </ToastProvider>
   );
 }
 

@@ -252,12 +252,11 @@ app.get('/resources/:id', authMiddleware, async (req, res) => {
       SELECT 
         r.id, r.title, r.description, r.resource_type, r.content_type,
         r.contributor_id, r.external_url, r.storage_path, r.created_at,
-        r.subject_offering_id, r.ai_summary,
+        r.subject_offering_id, r.ai_summary, r.visibility,
         s.id AS subject_id, s.code AS subject_code, s.name AS subject_name, s.course_id,
         c.name AS course_name, ay.start_year, ay.end_year, u.unit_number,
         usr.role AS contributor_type, usr.is_verified AS contributor_is_verified,
-        faculty.full_name AS faculty_name,
-        'public' AS visibility
+        faculty.full_name AS faculty_name
       FROM resources r
       JOIN subjects s ON r.subject_id = s.id
       JOIN courses c ON s.course_id = c.id
@@ -661,9 +660,22 @@ app.put('/resources/:id', authMiddleware, async (req, res) => {
       }
     }
 
-    if (unit_number !== undefined) {
-      // If switching to Link, unit_id might stay or go.
-      // If explicitly provided, we should resolve it.
+    if (unit_number !== undefined && unit_number !== null && unit_number !== '') {
+      // Resolve unit_id using the current (or newly resolved) offering
+      const offeringId = existingResource.subject_offering_id;
+      if (offeringId) {
+        try {
+          const unitId = await resolveUnit(offeringId, parseInt(unit_number));
+          if (unitId !== existingResource.unit_id) {
+            addUpdate('unit_id', unitId);
+          }
+        } catch (e) {
+          // Unit may not exist for that offering — skip silently
+        }
+      }
+    } else if (unit_number === '') {
+      // Explicitly cleared — set to null
+      if (existingResource.unit_id !== null) addUpdate('unit_id', null);
     }
 
     // CONVERSION LOGIC: Switch to External Link

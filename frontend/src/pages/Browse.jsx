@@ -5,6 +5,7 @@ import { useAuth } from "../auth/AuthContext";
 import { API_BASE_URL } from "../utils/api";
 import SummaryModal from "../components/SummaryModal";
 import { useResourceContext } from "../context/ResourceContext";
+import { useToast } from "../context/ToastContext";
 import "../styles/browse.css";
 
 const RESOURCE_TYPE_CONFIG = {
@@ -113,8 +114,9 @@ function useResources(user) {
 // Main Component
 // ===============================
 function Browse() {
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const navigate = useNavigate(); // ✅ moved inside component
+  const { showToast } = useToast();
   const { resources, loading, error, refetch } = useResources(user);
   const { setContextResource, clearContextResource } = useResourceContext();
 
@@ -172,11 +174,13 @@ function Browse() {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
+      if (!token) {
+        showToast("Please log in to use the AI summarizer.", "warning");
+        return;
+      }
 
-      if (!token) return;
-
-      // Clear previous summary if any to show loading state in modal if we want
-      setActiveSummary({ title: "", summary: null });
+      const res = resources.find(r => r.id === resourceId);
+      setActiveSummary({ title: res?.title || "Resource", summary: null });
 
       const response = await fetch(`${API_BASE_URL}/resources/${resourceId}/summarize`, {
         method: "POST",
@@ -186,6 +190,10 @@ function Browse() {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          showToast("Your session has expired. Please log in again.", "error");
+          throw new Error("Session expired");
+        }
         const errData = await response.json();
         throw new Error(errData.error || "Failed to generate summary");
       }
@@ -193,19 +201,20 @@ function Browse() {
       const result = await response.json();
       const newSummary = result.summary;
 
-      await refetch(); // Refetch to get the new summary stored in DB
+      await refetch();
+      setContextResource(res); 
 
-      // Open modal with the new summary
-      const res = resources.find(r => r.id === resourceId);
-      setContextResource(res); // Set context for chatbot
       setActiveSummary({
         title: res?.title || "Resource Snapshot",
         summary: newSummary
       });
+      showToast("AI Snapshot generated successfully!", "success");
     } catch (err) {
       console.error("Summarization failed:", err);
       setActiveSummary(null);
-      alert(err.message);
+      if (err.message !== "Session expired") {
+        showToast(err.message, "error");
+      }
     }
   };
 
@@ -321,8 +330,8 @@ function Browse() {
         window.open(data.signedUrl, "_blank", "noopener,noreferrer");
       }
     } catch (err) {
-      console.error("Error viewing resource:", err);
-      alert("Unable to open resource. Please try again.");
+      console.error("View failed", err);
+      showToast("Unable to open resource. Please try again.", "error");
     }
   };
 
