@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
+import { API_BASE_URL } from "../utils/api";
 import "../styles/auth.css";
 
 function SignUp({ isDark, onToggleTheme }) {
@@ -10,6 +11,26 @@ function SignUp({ isDark, onToggleTheme }) {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [courses, setCourses] = useState([]);
+  const [selectedCourseId, setSelectedCourseId] = useState("");
+  const [preferredCourse, setPreferredCourse] = useState("");
+  const [isOtherSelected, setIsOtherSelected] = useState(false);
+
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  const fetchCourses = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/courses`);
+      const result = await response.json();
+      if (result.success) {
+        setCourses(result.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch courses:", err);
+    }
+  };
 
   // ❌ REMOVED: local theme state, useEffect, toggleTheme
 
@@ -17,8 +38,8 @@ function SignUp({ isDark, onToggleTheme }) {
     e.preventDefault();
     setError("");
 
-    if (!fullName.trim() || !email.trim() || !password.trim()) {
-      setError("Please fill in all fields");
+    if (!fullName.trim() || !email.trim() || !password.trim() || (!selectedCourseId && !isOtherSelected) || (isOtherSelected && !preferredCourse.trim())) {
+      setError("Please fill in all fields (including course selection)");
       return;
     }
 
@@ -37,7 +58,13 @@ function SignUp({ isDark, onToggleTheme }) {
     const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName.trim() } },
+      options: { 
+        data: { 
+          full_name: fullName.trim(),
+          course_id: isOtherSelected ? null : selectedCourseId,
+          preferred_course: isOtherSelected ? preferredCourse.trim() : null
+        } 
+      },
     });
 
     if (signUpError) {
@@ -119,6 +146,48 @@ function SignUp({ isDark, onToggleTheme }) {
                   autoComplete="email"
                 />
               </div>
+
+              <div className="form-group">
+                <label className="form-label">Course / Program</label>
+                <select
+                  className="form-input"
+                  value={isOtherSelected ? "other" : selectedCourseId}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "other") {
+                      setIsOtherSelected(true);
+                      setSelectedCourseId("");
+                    } else {
+                      setIsOtherSelected(false);
+                      setSelectedCourseId(val);
+                    }
+                  }}
+                  disabled={loading}
+                >
+                  <option value="">Select your course</option>
+                  {courses.map((course) => (
+                    <option key={course.id} value={course.id}>
+                      {course.name} ({course.code})
+                    </option>
+                  ))}
+                  <option value="other">Other (Specify below)</option>
+                </select>
+              </div>
+
+              {isOtherSelected && (
+                <div className="form-group animate-fadeInUp">
+                  <label className="form-label" htmlFor="preferredCourse">Custom Course Name</label>
+                  <input
+                    id="preferredCourse"
+                    type="text"
+                    className="form-input"
+                    placeholder="Enter your course name"
+                    value={preferredCourse}
+                    onChange={(e) => setPreferredCourse(e.target.value)}
+                    disabled={loading}
+                  />
+                </div>
+              )}
 
               <div className="form-group">
                 <label className="form-label" htmlFor="password">Password</label>

@@ -13,7 +13,7 @@ import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import { extractTextFromPDF, generateSummary, chatWithAI } from './utils/ai.js';
-import { initSocketIO } from './socket.js';
+import { initSocketIO, getIO } from './socket.js';
 const app = express();
 const server = http.createServer(app);
 
@@ -348,7 +348,7 @@ app.post('/resources/:id/summarize', authMiddleware, async (req, res) => {
 });
 
 
-app.get('/courses', authMiddleware, async (req, res) => {
+app.get('/courses', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT id, code, name, degree_type, department
@@ -567,6 +567,35 @@ app.post('/resources/file', authMiddleware, (req, res) => {
       ]);
 
       await client.query('COMMIT');
+
+      // 🔥 NOTIFICATION LOGIC: Notify subscribers if verified immediately
+      if (autoVerified) {
+        try {
+          const resource = result.rows[0];
+          // Fetch context for notification
+          const contextRes = await client.query(
+            `SELECT u.full_name AS contributor_name, s.name AS subject_name, s.course_id
+             FROM users u, subjects s
+             WHERE u.id = $1 AND s.id = $2`,
+            [resource.contributor_id, resource.subject_id]
+          );
+          const ctx = contextRes.rows[0] || {};
+          
+          getIO().emit('resource:verified', {
+            resourceId:      resource.id,
+            title:           resource.title,
+            contributorName: ctx.contributor_name || 'Unknown',
+            subjectName:     ctx.subject_name     || 'Unknown',
+            courseId:        ctx.course_id,
+            verifiedAt:      resource.verified_at,
+            isAutoVerified:  true
+          });
+          console.log(`[Socket.IO] Auto-emitted resource:verified for ${resource.id}`);
+        } catch (socketErr) {
+          console.error('[Socket.IO] Auto-emit failed:', socketErr.message);
+        }
+      }
+
       res.status(201).json({ success: true, data: result.rows[0] });
 
     } catch (error) {

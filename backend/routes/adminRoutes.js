@@ -381,9 +381,9 @@ router.put('/resources/:id/verify', authMiddleware, adminOnly, async (req, res) 
 
     const resource = result.rows[0];
 
-    // 2. Fetch contributor name and subject name for the notification payload
+    // 2. Fetch contributor name, subject name, and COURSE ID for the notification payload
     const contextResult = await pool.query(
-      `SELECT u.full_name AS contributor_name, s.name AS subject_name
+      `SELECT u.full_name AS contributor_name, s.name AS subject_name, s.course_id
        FROM users u, subjects s
        WHERE u.id = $1 AND s.id = $2`,
       [resource.contributor_id, resource.subject_id]
@@ -397,6 +397,7 @@ router.put('/resources/:id/verify', authMiddleware, adminOnly, async (req, res) 
         title:           resource.title,
         contributorName: ctx.contributor_name || 'Unknown',
         subjectName:     ctx.subject_name     || 'Unknown',
+        courseId:        ctx.course_id,
         verifiedAt:      resource.verified_at,
       });
       console.log(`[Socket.IO] Emitted resource:verified for resource ${resource.id}`);

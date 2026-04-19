@@ -54,15 +54,31 @@ export async function authMiddleware(req, res, next) {
     let dbUser;
     try {
       const userResult = await pool.query(
-        "SELECT role, is_verified, is_suspended FROM users WHERE id = $1",
+        "SELECT role, is_verified, is_suspended, course_id, preferred_course FROM users WHERE id = $1",
         [id]
       );
 
       if (userResult.rows.length === 0) {
-        return res.status(403).json({ success: false, error: "User not found in system" });
-      }
+        // AUTO-CREATE: If user exists in Supabase but not in our DB, add them.
+        // This handles regular graduates/students who sign up via frontend.
+        const meta = data.user.user_metadata || {};
+        const role = computeRole(email);
+        const name = meta.full_name || 'New User';
+        const courseId = meta.course_id || null;
+        const preferredCourse = meta.preferred_course || null;
+        const isVerified = email.endsWith("@rru.ac.in") || email.endsWith("@student.rru.ac.in");
 
-      dbUser = userResult.rows[0];
+        const insertRes = await pool.query(
+          `INSERT INTO users (id, email, full_name, role, is_verified, course_id, preferred_course)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           RETURNING role, is_verified, is_suspended, course_id, preferred_course`,
+          [id, email, name, role, isVerified, courseId, preferredCourse]
+        );
+        dbUser = insertRes.rows[0];
+        console.log(`[Auth] Auto-created DB record for user: ${email}`);
+      } else {
+        dbUser = userResult.rows[0];
+      }
 
       if (dbUser.is_suspended) {
         return res.status(403).json({ success: false, error: "Your account has been suspended by an administrator." });
@@ -87,17 +103,19 @@ export async function authMiddleware(req, res, next) {
       }
     }
 
-    const shouldBeAutoVerified = email.endsWith("@rru.ac.in") || email.endsWith("@student.rru.ac.in");
-    
-    if (shouldBeAutoVerified && dbUser.is_verified !== true) {
+    // SYNC METADATA: If user has course info in Supabase but not in DB, sync it.
+    const meta = data.user.user_metadata || {};
+    const metaCourseId = meta.course_id || null;
+    const metaPrefCourse = meta.preferred_course || null;
+
+    if ((metaCourseId && !dbUser.course_id) || (metaPrefCourse && !dbUser.preferred_course)) {
       try {
         await pool.query(
-          "UPDATE users SET is_verified = true WHERE id = $1",
-          [id]
+          "UPDATE users SET course_id = COALESCE(course_id, $1), preferred_course = COALESCE(preferred_course, $2) WHERE id = $3",
+          [metaCourseId, metaPrefCourse, id]
         );
-        dbUser.is_verified = true;
       } catch (updateErr) {
-        console.error("DB VERIFIED UPDATE ERROR:", updateErr.message);
+        console.error("DB COURSE SYNC ERROR:", updateErr.message);
       }
     }
 
