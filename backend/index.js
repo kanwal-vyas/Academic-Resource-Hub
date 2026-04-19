@@ -108,11 +108,33 @@ app.use(cors({
   credentials: true
 }));
 
+// DIAGNOSTIC PUBLIC ENDPOINTS
+app.get('/health-public', (req, res) => res.json({ success: true, message: 'Public endpoint is reachable' }));
+
+app.get(['/courses', '/api/courses'], async (req, res) => {
+  console.log('[API DEBUG] Public Fetch Initiated: /courses');
+  try {
+    const result = await pool.query(`
+      SELECT id, code, name, degree_type, department
+      FROM courses
+      ORDER BY created_at DESC
+    `);
+    console.log(`[API DEBUG] Found ${result.rows.length} courses`);
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('[API DEBUG] Error fetching courses:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+
+
 app.use("/", meRouter);
 app.use('/api/faculty', facultyRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/chat', aiRoutes);
+
 
 app.get('/resources', authMiddleware, async (req, res) => {
   try {
@@ -348,19 +370,7 @@ app.post('/resources/:id/summarize', authMiddleware, async (req, res) => {
 });
 
 
-app.get('/courses', async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT id, code, name, degree_type, department
-      FROM courses
-      ORDER BY created_at DESC
-    `);
-    res.json({ success: true, data: result.rows });
-  } catch (error) {
-    console.error('Error fetching courses:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch courses' });
-  }
-});
+// Public courses moved to top of index.js
 
 app.get('/subjects', authMiddleware, async (req, res) => {
   try {

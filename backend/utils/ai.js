@@ -1,4 +1,9 @@
+import dotenv from 'dotenv';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import pdfParse from 'pdf-parse/lib/pdf-parse.js';
+
 dotenv.config();
+
 
 // --- API Key Management & Client Initialization ---
 const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || "";
