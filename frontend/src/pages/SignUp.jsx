@@ -15,6 +15,9 @@ function SignUp({ isDark, onToggleTheme }) {
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [preferredCourse, setPreferredCourse] = useState("");
   const [isOtherSelected, setIsOtherSelected] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const isFaculty = email.toLowerCase().endsWith("@rru.ac.in") && !email.toLowerCase().includes("student");
 
   useEffect(() => {
     fetchCourses();
@@ -38,8 +41,23 @@ function SignUp({ isDark, onToggleTheme }) {
     e.preventDefault();
     setError("");
 
-    if (!fullName.trim() || !email.trim() || !password.trim() || (!selectedCourseId && !isOtherSelected) || (isOtherSelected && !preferredCourse.trim())) {
-      setError("Please fill in all fields (including course selection)");
+    if (!fullName.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    if (!isFaculty && (!selectedCourseId && !isOtherSelected)) {
+      setError("Please select your course");
+      return;
+    }
+
+    if (!isFaculty && isOtherSelected && !preferredCourse.trim()) {
+      setError("Please specify your custom course name");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
       return;
     }
 
@@ -147,46 +165,50 @@ function SignUp({ isDark, onToggleTheme }) {
                 />
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Course / Program</label>
-                <select
-                  className="form-input"
-                  value={isOtherSelected ? "other" : selectedCourseId}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === "other") {
-                      setIsOtherSelected(true);
-                      setSelectedCourseId("");
-                    } else {
-                      setIsOtherSelected(false);
-                      setSelectedCourseId(val);
-                    }
-                  }}
-                  disabled={loading}
-                >
-                  <option value="">Select your course</option>
-                  {courses.map((course) => (
-                    <option key={course.id} value={course.id}>
-                      {course.name} ({course.code})
-                    </option>
-                  ))}
-                  <option value="other">Other (Specify below)</option>
-                </select>
-              </div>
+              {!isFaculty && (
+                <>
+                  <div className="form-group animate-fadeInUp">
+                    <label className="form-label">Course / Program</label>
+                    <select
+                      className="form-input"
+                      value={isOtherSelected ? "other" : selectedCourseId}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "other") {
+                          setIsOtherSelected(true);
+                          setSelectedCourseId("");
+                        } else {
+                          setIsOtherSelected(false);
+                          setSelectedCourseId(val);
+                        }
+                      }}
+                      disabled={loading}
+                    >
+                      <option value="">Select your course</option>
+                      {courses.map((course) => (
+                        <option key={course.id} value={course.id}>
+                          {course.name} ({course.code})
+                        </option>
+                      ))}
+                      <option value="other">Other (Specify below)</option>
+                    </select>
+                  </div>
 
-              {isOtherSelected && (
-                <div className="form-group animate-fadeInUp">
-                  <label className="form-label" htmlFor="preferredCourse">Custom Course Name</label>
-                  <input
-                    id="preferredCourse"
-                    type="text"
-                    className="form-input"
-                    placeholder="Enter your course name"
-                    value={preferredCourse}
-                    onChange={(e) => setPreferredCourse(e.target.value)}
-                    disabled={loading}
-                  />
-                </div>
+                  {isOtherSelected && (
+                    <div className="form-group animate-fadeInUp">
+                      <label className="form-label" htmlFor="preferredCourse">Custom Course Name</label>
+                      <input
+                        id="preferredCourse"
+                        type="text"
+                        className="form-input"
+                        placeholder="Enter your course name"
+                        value={preferredCourse}
+                        onChange={(e) => setPreferredCourse(e.target.value)}
+                        disabled={loading}
+                      />
+                    </div>
+                  )}
+                </>
               )}
 
               <div className="form-group">
@@ -222,6 +244,19 @@ function SignUp({ isDark, onToggleTheme }) {
                     )}
                   </button>
                 </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="confirmPassword">Confirm Password</label>
+                <input
+                  id="confirmPassword"
+                  type={showPassword ? "text" : "password"}
+                  className="form-input"
+                  placeholder="Repeat your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={loading}
+                />
               </div>
 
               {error && (
