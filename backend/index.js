@@ -12,9 +12,13 @@ import facultyRoutes from './routes/facultyRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 import { extractTextFromPDF, generateSummary, chatWithAI } from './utils/ai.js';
+
 import { initSocketIO, getIO } from './socket.js';
+import { notifyCourseSubscribers } from './utils/notifications.js';
 const app = express();
+
 const server = http.createServer(app);
 
 // Initialize Supabase client
@@ -134,6 +138,8 @@ app.use('/api/faculty', facultyRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/chat', aiRoutes);
+app.use('/api/notifications', notificationRoutes);
+
 
 
 app.get('/resources', authMiddleware, async (req, res) => {
@@ -492,16 +498,45 @@ app.post('/resources', authMiddleware, async (req, res) => {
       autoVerified ? req.user.id : null,
       autoVerified ? new Date() : null,
     ]);
+    // NOTIFICATION LOGIC
+    if (autoVerified) {
+      try {
+        const resourceId = result.rows[0].id;
+        // Fetch context for notification
+        const contextRes = await client.query(
+          `SELECT u.full_name AS contributor_name, s.name AS subject_name, s.course_id
+           FROM users u, subjects s
+           WHERE u.id = $1 AND s.id = $2`,
+          [req.user.id, subject.id]
+        );
+        const ctx = contextRes.rows[0] || {};
+        
+        notifyCourseSubscribers({
+          courseId: ctx.course_id,
+          resourceId: resourceId,
+          title: 'New Resource Uploaded',
+          message: `A new ${resource_type.replace('_', ' ')} titled "${title}" has been uploaded to ${ctx.subject_name}.`,
+          excludeUserId: req.user.id
+        }).catch(err => console.error('Notification failed:', err));
+
+      } catch (ctxErr) {
+        console.error('Notification context fetch failed:', ctxErr);
+      }
+    }
+
     await client.query('COMMIT');
     res.status(201).json({ success: true, data: result.rows[0] });
+
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error creating external link resource:', error);
-    res.status(400).json({ success: false, error: error.message || 'Failed to create resource' });
+    const statusCode = error.message.includes('not found') ? 404 : 400;
+    res.status(statusCode).json({ success: false, error: error.message || 'Failed to create resource' });
   } finally {
     client.release();
   }
 });
+
 
 app.post('/resources/file', authMiddleware, (req, res) => {
   const busboy = Busboy({ headers: req.headers });
@@ -591,20 +626,20 @@ app.post('/resources/file', authMiddleware, (req, res) => {
           );
           const ctx = contextRes.rows[0] || {};
           
-          getIO().emit('resource:verified', {
-            resourceId:      resource.id,
-            title:           resource.title,
-            contributorName: ctx.contributor_name || 'Unknown',
-            subjectName:     ctx.subject_name     || 'Unknown',
-            courseId:        ctx.course_id,
-            verifiedAt:      resource.verified_at,
-            isAutoVerified:  true
-          });
-          console.log(`[Socket.IO] Auto-emitted resource:verified for ${resource.id}`);
-        } catch (socketErr) {
-          console.error('[Socket.IO] Auto-emit failed:', socketErr.message);
+          notifyCourseSubscribers({
+            courseId: ctx.course_id,
+            resourceId: resource.id,
+            title: 'New Resource Uploaded',
+            message: `A new ${resource_type.replace('_', ' ')} titled "${resource.title}" has been uploaded to ${ctx.subject_name}.`,
+            excludeUserId: req.user.id
+          }).catch(err => console.error('Notification failed:', err));
+
+          console.log(`[Notifications] Auto-triggered for resource ${resource.id}`);
+        } catch (ctxErr) {
+          console.error('Notification context fetch failed:', ctxErr);
         }
       }
+
 
       res.status(201).json({ success: true, data: result.rows[0] });
 

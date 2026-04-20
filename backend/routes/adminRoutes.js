@@ -4,6 +4,8 @@ import { authMiddleware } from '../middleware/auth.js';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import { getIO } from '../socket.js';
+import { notifyCourseSubscribers } from '../utils/notifications.js';
+
 
 dotenv.config();
 
@@ -390,21 +392,20 @@ router.put('/resources/:id/verify', authMiddleware, adminOnly, async (req, res) 
     );
     const ctx = contextResult.rows[0] || {};
 
-    // 3. Broadcast real-time notification to all connected clients
+    // 3. Trigger targeted course notification
     try {
-      getIO().emit('resource:verified', {
-        resourceId:      resource.id,
-        title:           resource.title,
-        contributorName: ctx.contributor_name || 'Unknown',
-        subjectName:     ctx.subject_name     || 'Unknown',
-        courseId:        ctx.course_id,
-        verifiedAt:      resource.verified_at,
-      });
-      console.log(`[Socket.IO] Emitted resource:verified for resource ${resource.id}`);
-    } catch (socketErr) {
-      // Non-fatal — DB already updated, don't fail the HTTP response
-      console.error('[Socket.IO] Emit failed (non-fatal):', socketErr.message);
+      notifyCourseSubscribers({
+        courseId: ctx.course_id,
+        resourceId: resource.id,
+        title: 'New Resource Verified',
+        message: `The resource "${resource.title}" for ${ctx.subject_name} has been verified and is now available.`,
+      }).catch(err => console.error('Notification failed:', err));
+
+      console.log(`[Notifications] Admin-triggered for resource ${resource.id}`);
+    } catch (notifyErr) {
+      console.error('[Notifications] Trigger failed (non-fatal):', notifyErr.message);
     }
+
 
     res.json({ success: true, data: result.rows[0] });
   } catch (err) {

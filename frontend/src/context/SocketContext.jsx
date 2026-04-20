@@ -1,66 +1,108 @@
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from '../auth/AuthContext';
+import { supabase } from '../supabaseClient';
+import { useToast } from './ToastContext';
+import { API_BASE_URL } from '../utils/api';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'; // Match backend port
 
 const SocketContext = createContext(null);
 
 export function SocketProvider({ children }) {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const socketRef = useRef(null);
-  const [notifications, setNotifications] = useState(() => {
-    // Persist notifications across page refreshes via sessionStorage
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // --- API Sync ---
+
+  const fetchNotifications = useCallback(async () => {
+    if (!user) return;
     try {
-      return JSON.parse(sessionStorage.getItem('arh_notifications') || '[]');
-    } catch {
-      return [];
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const res = await fetch(`${API_BASE_URL}/api/notifications`, {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+      if (res.ok) {
+        const result = await res.json();
+        setNotifications(result.data);
+        setUnreadCount(result.data.filter(n => !n.is_read).length);
+      }
+    } catch (err) {
+      console.error('[SocketContext] Fetch failed:', err);
     }
-  });
-  const [unreadCount, setUnreadCount] = useState(() => {
-    return parseInt(sessionStorage.getItem('arh_unread') || '0', 10);
-  });
+  }, [user]);
+
+  const markAsRead = async (id) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      await fetch(`${API_BASE_URL}/api/notifications/${id}/read`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error('[SocketContext] Mark read failed:', err);
+    }
+  };
+
+  const markAllRead = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      await fetch(`${API_BASE_URL}/api/notifications/read-all`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch (err) {
+      console.error('[SocketContext] Mark all read failed:', err);
+    }
+  };
+
+  // --- Socket Lifecycle ---
 
   useEffect(() => {
     if (!user) {
-      // User logged out — disconnect and reset
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
       }
+      setNotifications([]);
+      setUnreadCount(0);
       return;
     }
 
-    // Connect once per authenticated session
-    const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
+    fetchNotifications();
+
+    const socket = io(SOCKET_URL, {
+      transports: ['websocket'],
+      auth: {
+        userId: user.id,
+        courseId: user.course_id
+      }
+    });
+
     socketRef.current = socket;
 
     socket.on('connect', () => {
       console.log('[Socket.IO] Connected:', socket.id);
     });
 
-    socket.on('resource:verified', (data) => {
-      const notification = {
-        id: `${data.resourceId}-${Date.now()}`,
-        type: 'resource_verified',
-        title: `📚 New Resource Available!`,
-        body: `"${data.title}" by ${data.contributorName} — ${data.subjectName}`,
-        resourceId: data.resourceId,
-        timestamp: data.verifiedAt,
-        read: false,
-      };
+    socket.on('notification:new', (data) => {
+      console.log('[Socket.IO] New Targeted Notification:', data);
+      
+      // Add to local state (optimistic)
+      setNotifications(prev => [{ ...data, is_read: false, id: Date.now() }, ...prev]);
+      setUnreadCount(prev => prev + 1);
 
-      setNotifications((prev) => {
-        const updated = [notification, ...prev].slice(0, 50); // keep last 50
-        sessionStorage.setItem('arh_notifications', JSON.stringify(updated));
-        return updated;
-      });
-
-      setUnreadCount((prev) => {
-        const next = prev + 1;
-        sessionStorage.setItem('arh_unread', String(next));
-        return next;
-      });
+      // Show Toast
+      showToast(data.message, 'info', 5000);
     });
 
     socket.on('disconnect', () => {
@@ -71,32 +113,24 @@ export function SocketProvider({ children }) {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [user]);
-
-  const markAllRead = () => {
-    setUnreadCount(0);
-    sessionStorage.setItem('arh_unread', '0');
-    setNotifications((prev) => {
-      const updated = prev.map((n) => ({ ...n, read: true }));
-      sessionStorage.setItem('arh_notifications', JSON.stringify(updated));
-      return updated;
-    });
-  };
-
-  const clearAll = () => {
-    setNotifications([]);
-    setUnreadCount(0);
-    sessionStorage.removeItem('arh_notifications');
-    sessionStorage.removeItem('arh_unread');
-  };
+  }, [user, fetchNotifications, showToast]);
 
   return (
-    <SocketContext.Provider value={{ notifications, unreadCount, markAllRead, clearAll }}>
+    <SocketContext.Provider value={{ 
+      notifications, 
+      unreadCount, 
+      markAsRead, 
+      markAllRead, 
+      refresh: fetchNotifications 
+    }}>
       {children}
     </SocketContext.Provider>
   );
 }
 
 export function useSocket() {
-  return useContext(SocketContext);
+  const context = useContext(SocketContext);
+  if (!context) throw new Error('useSocket must be used within a SocketProvider');
+  return context;
 }
+

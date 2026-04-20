@@ -10,8 +10,11 @@ function timeAgo(ts) {
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `${d}d ago`;
+  return new Date(ts).toLocaleDateString();
 }
+
 
 export default function NotificationBell() {
   const { notifications, unreadCount, markAllRead, clearAll } = useSocket();
@@ -37,10 +40,16 @@ export default function NotificationBell() {
     });
   };
 
-  const handleNotifClick = (n) => {
+  const handleNotifClick = async (n) => {
+    if (!n.is_read) {
+      await markAsRead(n.id);
+    }
     setOpen(false);
-    navigate('/browse');
+    if (n.resource_id) {
+      navigate('/browse');
+    }
   };
+
 
   return (
     <div className="notif-bell-wrapper" ref={panelRef}>
@@ -77,16 +86,16 @@ export default function NotificationBell() {
               notifications.map((n) => (
                 <button
                   key={n.id}
-                  className={`notif-item ${!n.read ? 'notif-item--unread' : ''}`}
+                  className={`notif-item ${!n.is_read ? 'notif-item--unread' : ''}`}
                   onClick={() => handleNotifClick(n)}
                 >
                   <div className="notif-item-icon">📚</div>
                   <div className="notif-item-content">
                     <p className="notif-item-title">{n.title}</p>
-                    <p className="notif-item-body">{n.body}</p>
-                    <span className="notif-item-time">{timeAgo(n.timestamp)}</span>
+                    <p className="notif-item-text">{n.message}</p>
+                    <span className="notif-item-time">{timeAgo(n.created_at)}</span>
                   </div>
-                  {!n.read && <span className="notif-dot" />}
+                  {!n.is_read && <span className="notif-dot" />}
                 </button>
               ))
             )}

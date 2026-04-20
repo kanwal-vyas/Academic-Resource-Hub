@@ -18,8 +18,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { ResourceProvider } from "./context/ResourceContext";
 import { ToastProvider } from "./context/ToastContext";
 import ChatBot from "./components/ChatBot";
-import NotificationListener from "./components/NotificationListener";
 import CourseOnboardingModal from "./components/CourseOnboardingModal";
+
 
 import "./App.css";
 import "./styles/toast.css";
@@ -49,7 +49,7 @@ function App({ onToggleTheme, isDark }) {
     <ToastProvider>
       <ResourceProvider>
         <div className="app">
-          {user && <NotificationListener />}
+
           {user && (
           <Navbar
             isDark={isDark}
