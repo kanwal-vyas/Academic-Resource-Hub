@@ -19,6 +19,8 @@ import { ResourceProvider } from "./context/ResourceContext";
 import { ToastProvider } from "./context/ToastContext";
 import ChatBot from "./components/ChatBot";
 import NotificationListener from "./components/NotificationListener";
+import CourseOnboardingModal from "./components/CourseOnboardingModal";
+
 import "./App.css";
 import "./styles/toast.css";
 
@@ -170,7 +172,15 @@ function App({ onToggleTheme, isDark }) {
           </main>
           </div>
           {user && <ChatBot />}
+          {user && 
+           user.role !== 'faculty' && 
+           user.role !== 'admin' && 
+           !user.course_id && 
+           !user.preferred_course && (
+            <CourseOnboardingModal />
+          )}
         </div>
+
       </ResourceProvider>
     </ToastProvider>
   );

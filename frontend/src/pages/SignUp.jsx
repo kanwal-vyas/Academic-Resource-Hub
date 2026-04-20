@@ -13,8 +13,13 @@ function SignUp({ isDark, onToggleTheme }) {
   const [showPassword, setShowPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
 
+
   const isFaculty = email.toLowerCase().endsWith("@rru.ac.in") && !email.toLowerCase().includes("student");
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8abe8df033c262abf590f1105545f0e8944f0ffc
 
   // ❌ REMOVED: local theme state, useEffect, toggleTheme
 
@@ -27,6 +32,10 @@ function SignUp({ isDark, onToggleTheme }) {
       return;
     }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8abe8df033c262abf590f1105545f0e8944f0ffc
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
@@ -50,7 +59,12 @@ function SignUp({ isDark, onToggleTheme }) {
       password,
       options: { 
         data: { 
+<<<<<<< HEAD
           full_name: fullName.trim()
+=======
+          full_name: fullName.trim(),
+
+>>>>>>> 8abe8df033c262abf590f1105545f0e8944f0ffc
         } 
       },
     });
@@ -97,7 +111,7 @@ function SignUp({ isDark, onToggleTheme }) {
             <h1 className="auth-title">Academic Resource Hub</h1>
             <p className="auth-subtitle">Create an account to access or share academic resources</p>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '8px', marginBottom: '16px' }}>
-              <strong>Faculty:</strong> Please use your <code>@rru.ac.in</code> email to automatically receive faculty access.
+              <strong>Note:</strong> All users must use their college email ID for registration.
             </div>
           </div>
 
@@ -136,7 +150,12 @@ function SignUp({ isDark, onToggleTheme }) {
               </div>
 
 
+<<<<<<< HEAD
               <div className="form-group animate-fadeInUp">
+=======
+
+              <div className="form-group">
+>>>>>>> 8abe8df033c262abf590f1105545f0e8944f0ffc
                 <label className="form-label" htmlFor="password">Password</label>
                 <div className="password-wrapper">
                   <input

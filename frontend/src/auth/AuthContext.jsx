@@ -81,12 +81,21 @@ export function AuthProvider({ children }) {
     if (error) throw error;
   };
 
+  const refreshUser = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      const backendUser = await fetchBackendUser(session.access_token);
+      setUser(backendUser);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, sendPasswordResetEmail, updateUserPassword }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser, sendPasswordResetEmail, updateUserPassword }}>
       {children}
     </AuthContext.Provider>
   );
 }
+
 
 export function useAuth() {
   return useContext(AuthContext);

@@ -15,9 +15,11 @@ async function main() {
     // Check if columns exist, if not add them
     await client.query(`
       ALTER TABLE faculty_profiles 
+      ADD COLUMN IF NOT EXISTS department TEXT,
       ADD COLUMN IF NOT EXISTS internship_details TEXT,
       ADD COLUMN IF NOT EXISTS research_details TEXT,
       ADD COLUMN IF NOT EXISTS mentoring_details TEXT;
+
     `);
 
     // Add is_suspended column to users if it doesn't exist

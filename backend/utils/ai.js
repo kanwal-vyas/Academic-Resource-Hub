@@ -1,6 +1,10 @@
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from "@google/generative-ai";
+<<<<<<< HEAD
 import pdfParse from 'pdf-parse/lib/pdf-parse.js';
+=======
+
+>>>>>>> 8abe8df033c262abf590f1105545f0e8944f0ffc
 
 dotenv.config();
 
@@ -69,8 +73,22 @@ import Tesseract from 'tesseract.js';
  */
 export async function extractTextFromPDF(buffer) {
   try {
-    const data = await pdfParse(buffer);
-    let text = data.text || '';
+    const uint8Array = new Uint8Array(buffer);
+    const loadingTask = pdfjs.getDocument({
+      data: uint8Array,
+      useSystemFonts: true,
+      disableFontFace: true
+    });
+    const doc = await loadingTask.promise;
+    let text = "";
+    
+    for (let i = 1; i <= doc.numPages; i++) {
+      const page = await doc.getPage(i);
+      const content = await page.getTextContent();
+      const strings = content.items.map(item => item.str);
+      text += strings.join(" ") + "\n";
+    }
+
     
     // Fallback to OCR if digital text is empty or nearly empty
     if (text.trim().length < 50) {
