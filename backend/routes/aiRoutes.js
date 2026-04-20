@@ -56,11 +56,21 @@ router.post('/', authMiddleware, async (req, res) => {
 
   } catch (error) {
     console.error('Error in chat route:', error);
+    
+    // Check if it's a known quota error from our AI utility
+    if (error.isQuotaExceeded) {
+      return res.status(429).json({
+        success: false,
+        error: error.message
+      });
+    }
+
     res.status(500).json({ 
       success: false, 
       error: error.message || 'Failed to process chat'
     });
   }
+
 });
 
 export default router;

@@ -73,14 +73,20 @@ const ChatBot = () => {
       }
     } catch (err) {
       console.error('Chat error:', err);
+      
+      const friendlyError = err.message.includes("quota") || err.message.includes("requests")
+        ? "I'm currently very busy helping other students. Please try again in a few moments!"
+        : `I'm having a little trouble connecting right now. ${err.message}`;
+
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
-        message: `I encountered an issue: ${err.message}. Please check if the server is running and try again.`,
+        message: friendlyError,
         role: 'model',
         created_at: new Date().toISOString(),
         isError: true
       }]);
     } finally {
+
       setIsTyping(false);
     }
   };

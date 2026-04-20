@@ -1,10 +1,7 @@
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from "@google/generative-ai";
-<<<<<<< HEAD
 import pdfParse from 'pdf-parse/lib/pdf-parse.js';
-=======
 
->>>>>>> 8abe8df033c262abf590f1105545f0e8944f0ffc
 
 dotenv.config();
 
@@ -41,23 +38,34 @@ async function executeAIOperation(operationFn) {
       lastError = error;
       
       // Specifically check for "Too Many Requests" (429) or quota errors
-      const isQuotaError = error.status === 429 || 
-                          error.message?.includes("429") || 
-                          error.message?.includes("quota") || 
-                          error.message?.toLowerCase().includes("exhausted");
+      const errorMsg = error.message?.toLowerCase() || "";
+      const isQuotaError = 
+        error.status === 429 || 
+        errorMsg.includes("429") || 
+        errorMsg.includes("quota") || 
+        errorMsg.includes("too many requests") ||
+        errorMsg.includes("exhausted");
 
-      if (isQuotaError && i < clients.length - 1) {
-        console.warn(`Gemini API Key #${i+1} hit quota limit. Rotating to next key...`);
+      if (isQuotaError && i < apiKeys.length - 1) {
+        console.warn(`Gemini API Key #${i+1} hit quota limit. Rotating to key #${i+2}...`);
         continue; // Try next key
       }
       
-      // If it's not a quota error, or we're on the last key, rethrow
+      // If quota exhausted on ALL keys
+      if (isQuotaError) {
+        const quotaError = new Error("The AI Assistant is currently receiving a high volume of requests. Please try again in 1-2 minutes!");
+        quotaError.isQuotaExceeded = true;
+        throw quotaError;
+      }
+
+      // If it's not a quota error, rethrow
       break; 
     }
   }
 
   throw lastError;
 }
+
 
 // --- Imports ---
 
@@ -254,6 +262,9 @@ export async function chatWithAI(history, userMessage, context = null, globalCon
       throw error;
     }
   }).catch(error => {
+    // If it's our custom quota error, rethrow it directly
+    if (error.isQuotaExceeded) throw error;
     throw new Error(`AI Assistant Error: ${error.message}`);
   });
 }
+

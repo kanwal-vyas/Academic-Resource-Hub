@@ -16,10 +16,8 @@ function SignUp({ isDark, onToggleTheme }) {
 
   const isFaculty = email.toLowerCase().endsWith("@rru.ac.in") && !email.toLowerCase().includes("student");
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 8abe8df033c262abf590f1105545f0e8944f0ffc
+
 
   // ❌ REMOVED: local theme state, useEffect, toggleTheme
 
@@ -32,10 +30,8 @@ function SignUp({ isDark, onToggleTheme }) {
       return;
     }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 8abe8df033c262abf590f1105545f0e8944f0ffc
+
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
@@ -59,12 +55,7 @@ function SignUp({ isDark, onToggleTheme }) {
       password,
       options: { 
         data: { 
-<<<<<<< HEAD
           full_name: fullName.trim()
-=======
-          full_name: fullName.trim(),
-
->>>>>>> 8abe8df033c262abf590f1105545f0e8944f0ffc
         } 
       },
     });
@@ -150,12 +141,7 @@ function SignUp({ isDark, onToggleTheme }) {
               </div>
 
 
-<<<<<<< HEAD
               <div className="form-group animate-fadeInUp">
-=======
-
-              <div className="form-group">
->>>>>>> 8abe8df033c262abf590f1105545f0e8944f0ffc
                 <label className="form-label" htmlFor="password">Password</label>
                 <div className="password-wrapper">
                   <input
