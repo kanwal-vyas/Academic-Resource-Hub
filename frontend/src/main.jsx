@@ -4,6 +4,9 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
 import { AuthProvider } from "./auth/AuthContext";
 import { SocketProvider } from "./context/SocketContext";
+import { ToastProvider } from "./context/ToastContext";
+import { ResourceProvider } from "./context/ResourceContext";
+
 import "./App.css";
 
 // ✅ FIX 1: Apply class SYNCHRONOUSLY before React renders (prevents flash + ensures body class on all routes including login)
@@ -37,10 +40,15 @@ function Root() {
     <React.StrictMode>
       <BrowserRouter>
         <AuthProvider>
-          <SocketProvider>
-            <App onToggleTheme={toggleTheme} isDark={isDark} />
-          </SocketProvider>
+          <ToastProvider>
+            <SocketProvider>
+              <ResourceProvider>
+                <App onToggleTheme={toggleTheme} isDark={isDark} />
+              </ResourceProvider>
+            </SocketProvider>
+          </ToastProvider>
         </AuthProvider>
+
       </BrowserRouter>
     </React.StrictMode>
   );

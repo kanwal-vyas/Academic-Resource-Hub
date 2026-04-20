@@ -15,9 +15,9 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ContactAdmin from "./pages/ContactAdmin";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { ResourceProvider } from "./context/ResourceContext";
-import { ToastProvider } from "./context/ToastContext";
 import ChatBot from "./components/ChatBot";
+
+
 import CourseOnboardingModal from "./components/CourseOnboardingModal";
 
 
@@ -46,9 +46,8 @@ function App({ onToggleTheme, isDark }) {
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
 
   return (
-    <ToastProvider>
-      <ResourceProvider>
-        <div className="app">
+    <div className="app">
+
 
           {user && (
           <Navbar
@@ -179,10 +178,7 @@ function App({ onToggleTheme, isDark }) {
            !user.preferred_course && (
             <CourseOnboardingModal />
           )}
-        </div>
-
-      </ResourceProvider>
-    </ToastProvider>
+    </div>
   );
 }
 
