@@ -383,12 +383,12 @@ router.put('/resources/:id/verify', authMiddleware, adminOnly, async (req, res) 
 
     const resource = result.rows[0];
 
-    // 2. Fetch contributor name, subject name, and COURSE ID for the notification payload
+    // 2. Fetch context for notification (subject info and course ID)
     const contextResult = await pool.query(
-      `SELECT u.full_name AS contributor_name, s.name AS subject_name, s.course_id
-       FROM users u, subjects s
-       WHERE u.id = $1 AND s.id = $2`,
-      [resource.contributor_id, resource.subject_id]
+      `SELECT s.name AS subject_name, s.course_id
+       FROM subjects s
+       WHERE s.id = $1`,
+      [resource.subject_id]
     );
     const ctx = contextResult.rows[0] || {};
 

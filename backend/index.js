@@ -498,30 +498,28 @@ app.post('/resources', authMiddleware, async (req, res) => {
       autoVerified ? req.user.id : null,
       autoVerified ? new Date() : null,
     ]);
-    // NOTIFICATION LOGIC
-    if (autoVerified) {
-      try {
-        const resourceId = result.rows[0].id;
-        // Fetch context for notification
-        const contextRes = await client.query(
-          `SELECT u.full_name AS contributor_name, s.name AS subject_name, s.course_id
-           FROM users u, subjects s
-           WHERE u.id = $1 AND s.id = $2`,
-          [req.user.id, subject.id]
-        );
-        const ctx = contextRes.rows[0] || {};
-        
+    // NOTIFICATION LOGIC: Trigger for all uploads (including pending verification)
+    try {
+      const resourceId = result.rows[0].id;
+      // Fetch context for notification - use proper JOIN syntax
+      const contextRes = await client.query(
+        `SELECT s.name AS subject_name, s.course_id
+         FROM subjects s
+         WHERE s.id = $1`,
+        [subject.id]
+      );
+      const ctx = contextRes.rows[0] || {};
+      
+      if (ctx.course_id) {
         notifyCourseSubscribers({
           courseId: ctx.course_id,
           resourceId: resourceId,
           title: 'New Resource Uploaded',
-          message: `A new ${resource_type.replace('_', ' ')} titled "${title}" has been uploaded to ${ctx.subject_name}.`,
-          excludeUserId: req.user.id
+          message: `A new ${resource_type.replace('_', ' ')} titled "${title}" has been uploaded to ${ctx.subject_name}.`
         }).catch(err => console.error('Notification failed:', err));
-
-      } catch (ctxErr) {
-        console.error('Notification context fetch failed:', ctxErr);
       }
+    } catch (ctxErr) {
+      console.error('Notification context fetch failed:', ctxErr);
     }
 
     await client.query('COMMIT');
@@ -613,31 +611,28 @@ app.post('/resources/file', authMiddleware, (req, res) => {
 
       await client.query('COMMIT');
 
-      // 🔥 NOTIFICATION LOGIC: Notify subscribers if verified immediately
-      if (autoVerified) {
-        try {
-          const resource = result.rows[0];
-          // Fetch context for notification
-          const contextRes = await client.query(
-            `SELECT u.full_name AS contributor_name, s.name AS subject_name, s.course_id
-             FROM users u, subjects s
-             WHERE u.id = $1 AND s.id = $2`,
-            [resource.contributor_id, resource.subject_id]
-          );
-          const ctx = contextRes.rows[0] || {};
-          
+      // 🔥 NOTIFICATION LOGIC: Trigger for all uploads
+      try {
+        const resource = result.rows[0];
+        // Fetch context for notification
+        const contextRes = await client.query(
+          `SELECT s.name AS subject_name, s.course_id
+           FROM subjects s
+           WHERE s.id = $1`,
+          [resource.subject_id]
+        );
+        const ctx = contextRes.rows[0] || {};
+        
+        if (ctx.course_id) {
           notifyCourseSubscribers({
             courseId: ctx.course_id,
             resourceId: resource.id,
             title: 'New Resource Uploaded',
-            message: `A new ${resource_type.replace('_', ' ')} titled "${resource.title}" has been uploaded to ${ctx.subject_name}.`,
-            excludeUserId: req.user.id
+            message: `A new ${resource_type.replace('_', ' ')} titled "${resource.title}" has been uploaded to ${ctx.subject_name}.`
           }).catch(err => console.error('Notification failed:', err));
-
-          console.log(`[Notifications] Auto-triggered for resource ${resource.id}`);
-        } catch (ctxErr) {
-          console.error('Notification context fetch failed:', ctxErr);
         }
+      } catch (ctxErr) {
+        console.error('Notification context fetch failed:', ctxErr);
       }
 
 

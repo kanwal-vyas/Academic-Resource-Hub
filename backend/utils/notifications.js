@@ -24,8 +24,8 @@ export async function notifyCourseSubscribers({ courseId, resourceId, title, mes
 
     const userIds = usersRes.rows.map(r => r.id);
 
+    // 2. Create persistent notification records in bulk (if any users found)
     if (userIds.length > 0) {
-      // 2. Create persistent notification records in bulk
       const values = [];
       const placeholders = [];
       
@@ -39,17 +39,19 @@ export async function notifyCourseSubscribers({ courseId, resourceId, title, mes
         `INSERT INTO notifications (user_id, resource_id, title, message) VALUES ${placeholders.join(', ')}`,
         values
       );
-
-      // 3. Emit real-time socket event to the course room
-      getIO().to(`course:${courseId}`).emit('notification:new', {
-        title,
-        message,
-        resourceId,
-        created_at: new Date().toISOString()
-      });
-
-      console.log(`[Notifications] Sent to ${userIds.length} users in Course ${courseId}`);
+      console.log(`[Notifications] Persisted for ${userIds.length} users in Course ${courseId}`);
     }
+
+    // 3. Emit real-time socket event to the course room ALWAYS
+    // This ensures currently connected users (including the uploader if in the room)
+    // get the live notification even if they aren't 'officially' in the DB list for this course yet.
+    getIO().to(`course:${courseId}`).emit('notification:new', {
+      title,
+      message,
+      resourceId,
+      created_at: new Date().toISOString()
+    });
+
   } catch (err) {
     console.error('[Notifications] Error notifying course subscribers:', err);
   }

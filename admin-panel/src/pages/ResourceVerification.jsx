@@ -3,7 +3,6 @@ import { supabase } from '../supabaseClient';
 import Sidebar from '../components/Sidebar';
 import ConfirmModal from '../components/ConfirmModal';
 import SummaryModal from '../components/SummaryModal';
-import { useToast } from '../context/ToastContext';
 import '../styles/admin.css';
 import '../styles/browse.css';
 import '../styles/my-resources.css';
@@ -38,19 +37,19 @@ async function generalApiFetch(path, options = {}) {
 
 // ── Resource type config (mirrored from MyResources) ─────────
 const RESOURCE_TYPE_CONFIG = {
-  question_paper:   { className: 'chip-question', label: 'Question Paper' },
-  lecture_notes:    { className: 'chip-notes',    label: 'Lecture Notes' },
-  research_paper:   { className: 'chip-research', label: 'Research Paper' },
-  project_material: { className: 'chip-notes',    label: 'Project Material' },
-  notes:            { className: 'chip-notes',    label: 'Notes' },
+  question_paper: { className: 'chip-question', label: 'Question Paper' },
+  lecture_notes: { className: 'chip-notes', label: 'Lecture Notes' },
+  research_paper: { className: 'chip-research', label: 'Research Paper' },
+  project_material: { className: 'chip-notes', label: 'Project Material' },
+  notes: { className: 'chip-notes', label: 'Notes' },
 };
 
 const typeClassMap = {
-  lecture_notes:    'resource-badge--fgreen',
-  question_paper:   'resource-badge--purple',
-  research_paper:   'resource-badge--orange',
+  lecture_notes: 'resource-badge--fgreen',
+  question_paper: 'resource-badge--purple',
+  research_paper: 'resource-badge--orange',
   project_material: 'resource-badge--yellow',
-  other:            'resource-badge--grey',
+  other: 'resource-badge--grey',
 };
 
 function getResourceTypeDisplay(type) {
@@ -65,9 +64,9 @@ function getResourceTypeDisplay(type) {
 // ── Edit Modal (full 3-tab) ───────────────────────────────────
 const TYPE_LABELS = { pdf: 'PDF Document', video: 'Video', note: 'Note / Article', slides: 'Slides / PPT', link: 'External Link', other: 'Other' };
 const VISIBILITY_OPTS = [
-  { value: 'public',  label: '🌐 Public' },
+  { value: 'public', label: '🌐 Public' },
   { value: 'faculty', label: '👨‍🏫 Faculty Only' },
-  { value: 'private', label: '🔒 Private' },
+  { value: 'private', label: '🔒 Private - only visible to verified user' },
 ];
 
 function EditModal({ resource, onClose, onSaved }) {
@@ -235,9 +234,9 @@ function EditModal({ resource, onClose, onSaved }) {
 
             <div className="rv-modal-footer">
               <div className="rv-footer-tab-nav">
-                <button className="rv-footer-tab-btn" onClick={() => { const i = tabs.findIndex(t => t.id === activeTab); if (i > 0) setActiveTab(tabs[i-1].id); }} disabled={activeTab === tabs[0].id || saving}>← Prev</button>
+                <button className="rv-footer-tab-btn" onClick={() => { const i = tabs.findIndex(t => t.id === activeTab); if (i > 0) setActiveTab(tabs[i - 1].id); }} disabled={activeTab === tabs[0].id || saving}>← Prev</button>
                 <span className="rv-footer-tab-dots">{tabs.map(t => <span key={t.id} className={`rv-tab-dot ${activeTab === t.id ? 'rv-tab-dot--active' : ''}`} />)}</span>
-                <button className="rv-footer-tab-btn" onClick={() => { const i = tabs.findIndex(t => t.id === activeTab); if (i < tabs.length - 1) setActiveTab(tabs[i+1].id); }} disabled={activeTab === tabs[tabs.length-1].id || saving}>Next →</button>
+                <button className="rv-footer-tab-btn" onClick={() => { const i = tabs.findIndex(t => t.id === activeTab); if (i < tabs.length - 1) setActiveTab(tabs[i + 1].id); }} disabled={activeTab === tabs[tabs.length - 1].id || saving}>Next →</button>
               </div>
               <div className="rv-footer-actions">
                 <button className="rv-footer-btn rv-footer-btn--cancel" onClick={onClose} disabled={saving}>Cancel</button>
@@ -276,8 +275,8 @@ function AdminResourceCard({
     setIsSummarizing(false);
   };
 
-  const resourceType  = getResourceTypeDisplay(resource.resource_type);
-  const badgeClass    = typeClassMap[resource.resource_type] || '';
+  const resourceType = getResourceTypeDisplay(resource.resource_type);
+  const badgeClass = typeClassMap[resource.resource_type] || '';
   const contentTypeClass = resource.content_type === 'external_link' ? 'resource-badge--link' : 'resource-badge--file';
   const contentTypeLabel = resource.content_type === 'external_link' ? 'External Link' : 'File';
 
@@ -465,6 +464,7 @@ export default function ResourceVerification() {
   const [tab, setTab] = useState('pending');
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState(null);
   const [verifyingId, setVerifyingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [confirmingId, setConfirmingId] = useState(null);
@@ -472,7 +472,10 @@ export default function ResourceVerification() {
   const [activeSummary, setActiveSummary] = useState(null);
   const [search, setSearch] = useState('');
 
-  const { showToast } = useToast();
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   const load = useCallback(async () => {
     const isFirst = resources.length === 0;
@@ -523,12 +526,12 @@ export default function ResourceVerification() {
 
   const handleSummarize = async (resourceId) => {
     try {
-      const rsc = resources.find(r => r.id === resourceId);
-      setActiveSummary({ title: rsc?.title || 'Resource', summary: null });
+      setActiveSummary({ title: '', summary: null });
       const res = await generalApiFetch(`/resources/${resourceId}/summarize`, { method: 'POST' });
       if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Failed'); }
       const result = await res.json();
       setResources(prev => prev.map(r => r.id === resourceId ? { ...r, ai_summary: result.summary } : r));
+      const rsc = resources.find(r => r.id === resourceId);
       setActiveSummary({ title: rsc?.title || 'Resource Snapshot', summary: result.summary });
     } catch (err) { setActiveSummary(null); showToast(err.message, 'error'); }
   };
@@ -545,8 +548,8 @@ export default function ResourceVerification() {
     return r.title?.toLowerCase().includes(q) || r.contributor_name?.toLowerCase().includes(q) || r.subject_name?.toLowerCase().includes(q) || r.course_name?.toLowerCase().includes(q);
   });
 
-  const pendingCount  = resources.filter(r => !r.is_verified).length;
-  const verifiedCount = resources.filter(r =>  r.is_verified).length;
+  const pendingCount = resources.filter(r => !r.is_verified).length;
+  const verifiedCount = resources.filter(r => r.is_verified).length;
 
   return (
     <div className="admin-layout">
@@ -625,6 +628,9 @@ export default function ResourceVerification() {
 
       {/* AI Summary Modal */}
       <SummaryModal isOpen={!!activeSummary} onClose={() => setActiveSummary(null)} title={activeSummary?.title} summary={activeSummary?.summary} />
+
+      {/* Toast */}
+      {toast && <div className={`admin-toast admin-toast--${toast.type}`}>{toast.msg}</div>}
     </div>
   );
 }
