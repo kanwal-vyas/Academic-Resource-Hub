@@ -662,7 +662,7 @@ function UploadResource() {
                       {file ? file.name : "Choose a PDF file or drag it here"}
                     </div>
                     <div className="dropzone-subtitle">
-                      {file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : "Files up to 50MB are supported"}
+                      {file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : "Files up to 10MB are supported"}
                     </div>
                   </div>
                 </div>

@@ -1,14 +1,14 @@
 import express from 'express';
 import { createClient } from '@supabase/supabase-js';
 import pool from '../db.js';
-import dotenv from 'dotenv';
-dotenv.config();
+import config from '../config.js';
+import { facultyRegisterSchema } from '../validators/authValidator.js';
 
 const router = express.Router();
 
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  config.supabase.url,
+  config.supabase.serviceKey
 );
 
 // POST /api/auth/check-email
@@ -49,15 +49,16 @@ router.post('/contact', async (req, res) => {
 // POST /api/auth/faculty/register
 // Faculty self-registration — creates Supabase user + DB records
 router.post('/faculty/register', async (req, res) => {
-  const { email, password, full_name, department, employee_id, education, research_interests } = req.body;
-
-  if (!email || !password || !full_name || !department || !employee_id) {
-    return res.status(400).json({ success: false, error: 'Missing required fields: email, password, full_name, department, employee_id' });
+  const validation = facultyRegisterSchema.safeParse(req.body);
+  
+  if (!validation.success) {
+    return res.status(400).json({
+      success: false,
+      error: validation.error.errors[0].message
+    });
   }
 
-  if (!email.endsWith('@rru.ac.in')) {
-    return res.status(400).json({ success: false, error: 'Only @rru.ac.in email addresses can register as faculty' });
-  }
+  const { email, password, full_name, department, employee_id, education, research_interests } = validation.data;
 
   try {
     // 1. Create Supabase Auth user
@@ -83,15 +84,6 @@ router.post('/faculty/register', async (req, res) => {
        VALUES ($1, $2, $3, 'faculty', true)
        ON CONFLICT (id) DO UPDATE SET full_name = $3, role = 'faculty', is_verified = true`,
       [userId, email, full_name]
-    );
-
-    // 3. Insert into faculty_profiles with status = 'approved'
-    await pool.query(
-      `INSERT INTO faculty_profiles (user_id, department, employee_id, education, research_interests, status)
-       VALUES ($1, $2, $3, $4, $5, 'approved')
-       ON CONFLICT (user_id) DO UPDATE
-         SET department = $2, employee_id = $3, education = $4, research_interests = $5, status = 'approved'`,
-      [userId, department, employee_id, education || null, research_interests || null]
     );
 
     res.status(201).json({ success: true, message: 'Registration successful! You may now log in.', data: { userId } });

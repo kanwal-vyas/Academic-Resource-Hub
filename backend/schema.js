@@ -1,10 +1,12 @@
 import pg from 'pg';
+import config from './config.js';
 const { Pool } = pg;
-import dotenv from 'dotenv';
-dotenv.config();
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL
+  connectionString: config.databaseUrl,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 async function main() {
@@ -18,7 +20,8 @@ async function main() {
       ADD COLUMN IF NOT EXISTS department TEXT,
       ADD COLUMN IF NOT EXISTS internship_details TEXT,
       ADD COLUMN IF NOT EXISTS research_details TEXT,
-      ADD COLUMN IF NOT EXISTS mentoring_details TEXT;
+      ADD COLUMN IF NOT EXISTS mentoring_details TEXT,
+      ADD COLUMN IF NOT EXISTS is_visible BOOLEAN DEFAULT true;
 
     `);
 
@@ -51,6 +54,13 @@ async function main() {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
       CREATE INDEX IF NOT EXISTS idx_chat_history_user_id ON chat_history(user_id);
+    `);
+
+    // Performance Indexes for Resources
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_resources_contributor ON resources(contributor_id);
+      CREATE INDEX IF NOT EXISTS idx_resources_subject ON resources(subject_id);
+      CREATE INDEX IF NOT EXISTS idx_resources_visibility ON resources(visibility);
     `);
 
     await client.query("COMMIT");

@@ -1,12 +1,10 @@
-import dotenv from "dotenv";
 import pkg from "pg";
-
-dotenv.config();
+import config from "./config.js";
 
 const { Pool } = pkg;
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: config.databaseUrl,
   ssl: {
     rejectUnauthorized: false,
   },

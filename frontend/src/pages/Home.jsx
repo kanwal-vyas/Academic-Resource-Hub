@@ -132,6 +132,26 @@ function Home() {
   const { resources, loading, error } = useLatestResources(user);
   const { faculty, loading: facultyLoading, error: facultyError } = useLatestFaculty(user);
   const [selectedResourceId, setSelectedResourceId] = useState(null);
+  const [hasProfile, setHasProfile] = useState(true);
+
+  useEffect(() => {
+    const checkProfile = async () => {
+      if (user?.role === 'faculty') {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/faculty/${user.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          // If 403 (uninitialized) or 404, then they don't have a profile
+          setHasProfile(response.ok);
+        } catch (err) {
+          setHasProfile(false);
+        }
+      }
+    };
+    checkProfile();
+  }, [user]);
 
   const handleViewResource = async (resource) => {
     setSelectedResourceId(resource.id);
@@ -177,6 +197,18 @@ function Home() {
   return (
     <main className="home-page">
       <div className="container">
+        {user?.role === "faculty" && !hasProfile && (
+          <div className="faculty-promo-banner">
+            <div className="promo-content">
+              <h3>Set up your faculty profile</h3>
+              <p>Share your research interests and mentoring availability to help students find and connect with you.</p>
+            </div>
+            <Link to={`/faculty/${user.id}`} className="promo-btn">
+              Create My Profile
+            </Link>
+          </div>
+        )}
+
         {/* Latest Resources Section */}
         <section className="resources-section">
           <h2>Latest Resources</h2>

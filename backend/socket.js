@@ -1,13 +1,12 @@
-// Singleton socket.io instance — import this in any route that needs to emit events.
-// Prevents circular imports between index.js and route files.
 import { Server as SocketIOServer } from 'socket.io';
+import config from './config.js';
 
 let io = null;
 
 export function initSocketIO(httpServer) {
   io = new SocketIOServer(httpServer, {
     cors: {
-      origin: ['http://localhost:5173', 'http://localhost:5100'],
+      origin: config.corsOrigins,
       methods: ['GET', 'POST'],
       credentials: true,
     },

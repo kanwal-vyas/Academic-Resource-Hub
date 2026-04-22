@@ -6,12 +6,12 @@ import pool from "../db.js";
 
 const router = express.Router();
 
-router.get("/me", authMiddleware, (req, res) => {
+router.get("/", authMiddleware, (req, res) => {
   const { id, email, role, is_verified, course_id, preferred_course } = req.user;
   return res.json({ id, email, role, is_verified, course_id, preferred_course });
 });
 
-router.put("/me/onboard", authMiddleware, async (req, res) => {
+router.put("/onboard", authMiddleware, async (req, res) => {
   const { course_id, preferred_course } = req.body;
   const userId = req.user.id;
 

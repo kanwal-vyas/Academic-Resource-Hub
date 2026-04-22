@@ -1,11 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import pool from '../db.js';
-import dotenv from "dotenv";
-dotenv.config();
+import config from '../config.js';
 
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  config.supabase.url,
+  config.supabase.serviceKey
 );
 
 

@@ -1,17 +1,12 @@
-import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import pdfParse from 'pdf-parse/lib/pdf-parse.js';
-
-
-dotenv.config();
-
+import config from '../config.js';
 
 // --- API Key Management & Client Initialization ---
-const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || "";
-const apiKeys = rawKeys.split(',').map(key => key.trim()).filter(key => key.length > 0);
+const apiKeys = config.gemini.allKeys;
 
 if (apiKeys.length === 0) {
-  console.warn("WARNING: No Gemini API keys found in environment variables.");
+  console.warn("WARNING: No Gemini API keys found in configuration.");
 }
 
 // Map each key to its own GoogleGenerativeAI instance

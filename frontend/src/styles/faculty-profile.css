@@ -221,6 +221,50 @@
 
 /* ── Edit State & Expandable Details ── */
 
+.fp-header-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: 4px;
+}
+
+.fp-visibility-badge {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-public {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.status-private {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.visibility-toggle {
+  background: var(--surface-secondary);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  margin: var(--space-md) 0;
+}
+
+.toggle-hint {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  font-weight: 400;
+}
+
 .fp-header-content {
   display: flex;
   align-items: center;
@@ -324,18 +368,31 @@
 }
 
 .fp-form-actions .btn-save {
-  padding: 0.75rem 1.5rem;
-  background: var(--interaction);
-  color: #fff;
-  border: none;
+  padding: 0.75rem 1.75rem;
+  background: #fdfcfb;
+  color: #1a2332 !important;
+  border: 1.5px solid var(--border);
   border-radius: var(--radius-md);
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(26, 35, 50, 0.05);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .fp-form-actions .btn-save:hover:not(:disabled) {
-  background: var(--primary);
+  background: #1a2332;
+  color: #fff !important;
+  border-color: #1a2332;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(26, 35, 50, 0.15);
+}
+
+.fp-form-actions .btn-save:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .fp-form-actions .btn-cancel {
@@ -346,11 +403,12 @@
   border-radius: var(--radius-md);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
 }
 
 .fp-form-actions .btn-cancel:hover:not(:disabled) {
-  color: var(--text);
+  background: rgba(26, 35, 50, 0.03);
+  color: var(--primary);
   border-color: var(--text-secondary);
 }
 

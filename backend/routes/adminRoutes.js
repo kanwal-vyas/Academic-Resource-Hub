@@ -2,16 +2,13 @@ import express from 'express';
 import pool from '../db.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
+import config from '../config.js';
 import { getIO } from '../socket.js';
 import { notifyCourseSubscribers } from '../utils/notifications.js';
 
-
-dotenv.config();
-
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  config.supabase.url,
+  config.supabase.serviceKey
 );
 
 const router = express.Router();
@@ -39,11 +36,21 @@ router.get('/stats', authMiddleware, adminOnly, async (req, res) => {
       pool.query(`SELECT COUNT(*) FROM resources WHERE is_verified = false`),
     ]);
 
+    // Fetch Auth users to count pending ones
+    const { data: { users: authUsers } } = await supabase.auth.admin.listUsers();
+    const dbUserCount = parseInt((await pool.query('SELECT COUNT(*) FROM users')).rows[0].count);
+    const authUserCount = authUsers.length;
+    
+    // The "True" total is the Auth count (since everyone starts there)
+    // We'll adjust students count if some are pending
+    const dbStudentCount = parseInt(studentsRes.rows[0].count);
+    const pendingCount = Math.max(0, authUserCount - dbUserCount);
+
     res.json({
       success: true,
       data: {
         faculty: parseInt(facultyRes.rows[0].count),
-        students: parseInt(studentsRes.rows[0].count),
+        students: dbStudentCount + pendingCount, // Include pending as students
         courses: parseInt(coursesRes.rows[0].count),
         subjects: parseInt(subjectsRes.rows[0].count),
         total_resources: parseInt(totalResourcesRes.rows[0].count),
@@ -458,9 +465,11 @@ router.delete('/resources/:id', authMiddleware, adminOnly, async (req, res) => {
 // USERS LIST
 // ============================================================================
 
+// GET /api/admin/users — all users list
 router.get('/users', authMiddleware, adminOnly, async (req, res) => {
   try {
-    const result = await pool.query(`
+    // 1. Fetch all users from public.users table (with faculty profile info)
+    const dbResult = await pool.query(`
       SELECT
         u.id, u.full_name, u.email, u.role, u.is_suspended, u.is_verified, u.created_at,
         CASE
@@ -471,17 +480,60 @@ router.get('/users', authMiddleware, adminOnly, async (req, res) => {
       LEFT JOIN faculty_profiles fp ON fp.user_id = u.id
       ORDER BY u.created_at DESC
     `);
-    res.json({ success: true, data: result.rows });
+
+    // 2. Fetch all users from Supabase Auth to find "pending" or "orphaned" accounts
+    const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers();
+
+    if (authError) {
+      console.error('Supabase Auth fetch error:', authError);
+      return res.json({ success: true, data: dbResult.rows });
+    }
+
+    const dbUsers = dbResult.rows;
+    const dbUserIds = new Set(dbUsers.map(u => u.id));
+
+    // 3. Identify users who are in Auth but NOT in public.users yet
+    const pendingUsers = authUsers
+      .filter(au => !dbUserIds.has(au.id))
+      .map(au => ({
+        id: au.id,
+        full_name: au.user_metadata?.full_name || 'New User (Pending Sync)',
+        email: au.email,
+        role: 'student', // Default assumption
+        is_suspended: false,
+        is_verified: !!au.email_confirmed_at,
+        created_at: au.created_at,
+        department: null,
+        is_pending_sync: true
+      }));
+
+    // 4. Combine and sort
+    const allUsers = [...dbUsers, ...pendingUsers].sort((a, b) =>
+      new Date(b.created_at) - new Date(a.created_at)
+    );
+
+    console.log('--- ADMIN USER FETCH DIAGNOSTIC ---');
+    console.log('Total users found:', allUsers.length);
+    console.log('Emails:', allUsers.map(u => u.email).join(', '));
+    console.log('-----------------------------------');
+
+    res.json({ success: true, data: allUsers });
   } catch (err) {
     console.error('Error fetching users:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
 router.post('/users/:id/verify', authMiddleware, adminOnly, async (req, res) => {
   const { id } = req.params;
   try {
-    // 1. Mark as verified in Supabase Auth (bypassing email confirm)
+    // 1. Get user info from Auth to ensure they exist and have metadata
+    const { data: { user: authUser }, error: getUserError } = await supabase.auth.admin.getUserById(id);
+    if (getUserError || !authUser) {
+      return res.status(404).json({ success: false, error: 'User not found in Supabase Auth' });
+    }
+
+    // 2. Mark as verified in Supabase Auth (bypassing email confirm)
     const { error: authError } = await supabase.auth.admin.updateUserById(id, {
       email_confirm: true
     });
@@ -490,8 +542,13 @@ router.post('/users/:id/verify', authMiddleware, adminOnly, async (req, res) => 
       return res.status(500).json({ success: false, error: 'Failed to verify email in Supabase' });
     }
 
-    // 2. Mark as verified in local Users table
-    await pool.query('UPDATE users SET is_verified = true WHERE id = $1', [id]);
+    // 3. Ensure user exists in local DB and mark as verified
+    // Use ON CONFLICT to sync them if they were missing (is_pending_sync case)
+    await pool.query(`
+      INSERT INTO users (id, full_name, email, role, is_verified)
+      VALUES ($1, $2, $3, 'student', true)
+      ON CONFLICT (id) DO UPDATE SET is_verified = true
+    `, [id, authUser.user_metadata?.full_name || 'User', authUser.email]);
 
     res.json({ success: true });
   } catch (err) {
@@ -525,38 +582,53 @@ router.post('/users/:id/unverify', authMiddleware, adminOnly, async (req, res) =
 router.post('/users/:id/suspend', authMiddleware, adminOnly, async (req, res) => {
   const { id } = req.params;
   try {
+    // 1. Get user info from Auth for sync
+    const { data: { user: authUser }, error: getUserError } = await supabase.auth.admin.getUserById(id);
+    if (getUserError || !authUser) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    // 2. Ban in Supabase Auth
     const { error: authError } = await supabase.auth.admin.updateUserById(id, {
-      ban_duration: '87600h' // Ban for 10 years in Supabase Auth
+      ban_duration: '87600h' // 10 years
     });
     if (authError) {
       console.error('Supabase Auth ban failed:', authError);
       return res.status(500).json({ success: false, error: 'Failed to suspend user in Supabase' });
     }
 
-    await pool.query('UPDATE users SET is_suspended = true WHERE id = $1', [id]);
+    // 3. Ensure user exists in local DB and suspend
+    await pool.query(`
+      INSERT INTO users (id, full_name, email, role, is_suspended)
+      VALUES ($1, $2, $3, 'student', true)
+      ON CONFLICT (id) DO UPDATE SET is_suspended = true
+    `, [id, authUser.user_metadata?.full_name || 'User', authUser.email]);
+
     res.json({ success: true });
   } catch (err) {
     console.error('Error suspending user:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
 router.post('/users/:id/unsuspend', authMiddleware, adminOnly, async (req, res) => {
   const { id } = req.params;
   try {
+    // 1. Lift ban in Supabase Auth
     const { error: authError } = await supabase.auth.admin.updateUserById(id, {
-      ban_duration: 'none' // Lift the ban in Supabase Auth
+      ban_duration: 'none'
     });
     if (authError) {
       console.error('Supabase Auth unban failed:', authError);
       return res.status(500).json({ success: false, error: 'Failed to unsuspend user in Supabase' });
     }
 
+    // 2. Update local DB
     await pool.query('UPDATE users SET is_suspended = false WHERE id = $1', [id]);
     res.json({ success: true });
   } catch (err) {
-    console.error('Error unverifying user:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Error unsuspending user:', err);
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 

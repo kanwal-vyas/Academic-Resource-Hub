@@ -123,6 +123,7 @@ function Browse() {
 
   const [dbRole, setDbRole] = useState(null);
   const [allFaculties, setAllFaculties] = useState([]);
+  const [allCourses, setAllCourses] = useState([]);
 
   useEffect(() => {
     async function fetchMe() {
@@ -147,24 +148,34 @@ function Browse() {
   const isAdmin = dbRole === "admin";
 
   useEffect(() => {
-    async function fetchAllFaculties() {
+    async function fetchData() {
       try {
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData?.session?.access_token;
         if (!token) return;
 
-        const res = await fetch(`${API_BASE_URL}/faculty`, {
+        // Fetch Faculties
+        const facRes = await fetch(`${API_BASE_URL}/faculty`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.ok) {
-          const result = await res.json();
+        if (facRes.ok) {
+          const result = await facRes.json();
           setAllFaculties(result.data || []);
         }
+
+        // Fetch Courses
+        const courseRes = await fetch(`${API_BASE_URL}/courses`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (courseRes.ok) {
+          const result = await courseRes.json();
+          setAllCourses(result.data || []);
+        }
       } catch (err) {
-        console.error("Failed to fetch all faculties:", err);
+        console.error("Failed to fetch filters data:", err);
       }
     }
-    if (user) fetchAllFaculties();
+    if (user) fetchData();
   }, [user]);
 
   const handleDelete = async (resourceId) => {
@@ -251,9 +262,12 @@ function Browse() {
   const [selectedResourceId, setSelectedResourceId] = useState(null);
   const [activeSummary, setActiveSummary] = useState(null); // { title: string, summary: string }
 
-  // Derive unique courses from resources
+  // Combine all available courses with any mentioned in resources
   const courses = Array.from(
-    new Set(resources.map((r) => r.course_name).filter(Boolean))
+    new Set([
+      ...allCourses.map(c => c.name),
+      ...resources.map((r) => r.course_name)
+    ].filter(Boolean))
   ).sort();
 
   // Derive units for selected course
@@ -774,7 +788,7 @@ function ResourceCard({
 
         <div className="resource-actions">
           <button
-            className="resource-action-primary"
+            className={`resource-action-primary ${isSelected ? "selected" : ""}`}
             onClick={() => onView(resource)}
             aria-label={`View ${resource.title}`}
           >

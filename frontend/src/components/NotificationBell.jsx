@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useNavigate } from 'react-router-dom';
+import { Bell, BellOff, BookOpen } from 'lucide-react';
 import './NotificationBell.css';
 
 function timeAgo(ts) {
@@ -41,9 +42,6 @@ export default function NotificationBell() {
   };
 
   const handleNotifClick = async (n) => {
-    if (!n.is_read) {
-      await markAsRead(n.id);
-    }
     setOpen(false);
     if (n.resource_id) {
       navigate('/browse');
@@ -59,7 +57,9 @@ export default function NotificationBell() {
         aria-label="Notifications"
         title="Notifications"
       >
-        <span className="notif-bell-icon">🔔</span>
+        <div className="notif-bell-icon">
+          <Bell size={20} strokeWidth={2.25} />
+        </div>
         {unreadCount > 0 && (
           <span className="notif-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
         )}
@@ -79,7 +79,9 @@ export default function NotificationBell() {
           <div className="notif-list">
             {notifications.length === 0 ? (
               <div className="notif-empty">
-                <span className="notif-empty-icon">🔕</span>
+                <div className="notif-empty-icon">
+                  <BellOff size={32} strokeWidth={1.5} />
+                </div>
                 <p>No notifications yet</p>
               </div>
             ) : (
@@ -89,7 +91,9 @@ export default function NotificationBell() {
                   className={`notif-item ${!n.is_read ? 'notif-item--unread' : ''}`}
                   onClick={() => handleNotifClick(n)}
                 >
-                  <div className="notif-item-icon">📚</div>
+                  <div className="notif-item-icon">
+                    <BookOpen size={18} strokeWidth={2} />
+                  </div>
                   <div className="notif-item-content">
                     <p className="notif-item-title">{n.title}</p>
                     <p className="notif-item-text">{n.message}</p>

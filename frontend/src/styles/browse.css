@@ -207,7 +207,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: var(--space-xl);
-  align-items: stretch; /* Cards will match the tallest in the row */
+  align-items: stretch;
+  /* Cards will match the tallest in the row */
 }
 
 .resource-card {
@@ -221,12 +222,13 @@
   overflow: hidden;
   transition: all 0.4s var(--ease-expo);
   gap: var(--space-md);
-  height: 100%; /* Ensure card fills grid cell */
+  height: 100%;
+  /* Ensure card fills grid cell */
 }
 
 .resource-card:hover {
   transform: translateY(-8px) scale(1.02);
-  box-shadow: 
+  box-shadow:
     0 20px 40px -20px rgba(0, 0, 0, 0.15),
     0 0 20px rgba(107, 142, 127, 0.1);
   border-color: var(--accent);
@@ -405,7 +407,8 @@
   justify-content: center;
   padding: 10px var(--space-md);
   background-color: var(--accent);
-  color: #fff; /* White text on sage */
+  color: #fff;
+  /* White text on sage */
   border: none;
   font-weight: 700;
   font-size: 0.9375rem;
@@ -413,8 +416,17 @@
   transition: all 0.2s ease;
 }
 
+.resource-action-primary.selected {
+  background-color: var(--primary);
+}
+
+.dark .resource-action-primary.selected {
+  color: #0a0f1a !important;
+}
+
 .resource-action-primary:hover {
-  background-color: var(--accent-dark, #577a6b); /* Use a darker sage on hover */
+  background-color: var(--accent-dark, #577a6b);
+  /* Use a darker sage on hover */
   color: #fff;
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
@@ -422,8 +434,10 @@
 
 /* Ensure ultra-readable text in dark mode on hover */
 .dark .resource-action-primary:hover {
-  background-color: var(--accent-light); /* Switch to light sage */
-  color: #0a0f1a !important; /* Force darkest navy text */
+  background-color: var(--accent-light);
+  /* Switch to light sage */
+  color: #0a0f1a !important;
+  /* Force darkest navy text */
 }
 
 .owner-menu {
@@ -811,8 +825,17 @@
 }
 
 @keyframes sparkle {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(0.8) rotate(15deg); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.6;
+    transform: scale(0.8) rotate(15deg);
+  }
 }
 
 .summarize-button {
@@ -852,8 +875,15 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .summary-text {
@@ -878,9 +908,20 @@
 }
 
 @keyframes pulse {
-  0% { transform: scale(0.8); opacity: 0.5; }
-  50% { transform: scale(1.2); opacity: 1; }
-  100% { transform: scale(0.8); opacity: 0.5; }
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
 }
 
 .dark .ai-summary-section {

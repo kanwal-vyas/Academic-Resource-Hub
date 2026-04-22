@@ -221,7 +221,9 @@ export default function UserManagement() {
                         <td>
                           {u.is_suspended
                             ? <span className="ur-status" style={{ background: 'var(--danger-bg)', color: 'var(--danger)' }}>Suspended</span>
-                            : <span className="ur-status" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}>Active</span>}
+                            : u.is_pending_sync
+                              ? <span className="ur-status" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--warning)' }}>Pending Sync</span>
+                              : <span className="ur-status" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}>Active</span>}
                         </td>
                         <td className="ur-date">
                           {new Date(u.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -309,6 +311,13 @@ export default function UserManagement() {
                   </span>
                 </div>
               </div>
+
+              {selectedUser.is_pending_sync && (
+                <div style={{ marginTop: '1.5rem', padding: '12px', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '8px', color: '#92400e', fontSize: '0.85rem', lineHeight: '1.4' }}>
+                  <strong>⚠️ Account Pending Initialization</strong>
+                  <p style={{ margin: '4px 0 0' }}>This user has signed up but their profile is not yet fully synced to the main database. Verifying or Suspending them will complete the sync automatically.</p>
+                </div>
+              )}
 
               <div className="ur-modal-actions">
                 {selectedUser.is_verified ? (

@@ -44,6 +44,75 @@
   margin: var(--space-2xl) 0;
 }
 
+.faculty-promo-banner {
+  background: #111827; /* Deep navy/gray from sample */
+  border: 1px dashed rgba(107, 142, 127, 0.4);
+  padding: var(--space-xl);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-2xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-xl);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  animation: slideInDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.promo-content h3 {
+  margin: 0 0 8px 0;
+  color: #f9fafb;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.promo-content p {
+  margin: 0;
+  color: #9ca3af;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.promo-btn {
+  background: #374151; /* Muted gray button from sample */
+  color: #f9fafb;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.promo-btn:hover {
+  background: #4b5563;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .faculty-promo-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-lg);
+  }
+  .promo-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
 /* ===============================
    Resource List
    =============================== */
@@ -236,6 +305,10 @@
 .resource-button.selected {
   background: var(--primary);
   box-shadow: var(--shadow-lg);
+}
+
+.dark .resource-button.selected {
+  color: #0a0f1a !important;
 }
 
 /* ===============================

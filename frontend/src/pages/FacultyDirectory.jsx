@@ -59,35 +59,12 @@ function FacultyDirectory() {
           </p>
 
           {!loading && !error && user?.role === "faculty" && !faculty.some(f => f.id === user.id) && (
-            <div style={{
-              background: "var(--surface)",
-              border: "1px dashed var(--accent)",
-              padding: "var(--space-lg)",
-              borderRadius: "var(--radius-lg)",
-              marginBottom: "var(--space-xl)",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "1rem",
-              flexWrap: "wrap",
-              boxShadow: "var(--shadow-sm)"
-            }}>
-              <div>
-                <h3 style={{ margin: "0 0 0.5rem 0", color: "var(--text)" }}>Looking to feature your research?</h3>
-                <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "0.95rem" }}>Create your faculty profile to share your research interests and open opportunities with students.</p>
+            <div className="faculty-promo-banner">
+              <div className="promo-content">
+                <h3>Looking to feature your research?</h3>
+                <p>Create your faculty profile to share your research interests and open opportunities with students.</p>
               </div>
-              <Link
-                to={`/faculty/${user.id}`}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  background: "var(--interaction)",
-                  color: "#fff",
-                  borderRadius: "var(--radius-md)",
-                  fontWeight: "600",
-                  textDecoration: "none",
-                  display: "inline-block"
-                }}
-              >
+              <Link to={`/faculty/${user.id}`} className="promo-btn">
                 Create My Profile
               </Link>
             </div>

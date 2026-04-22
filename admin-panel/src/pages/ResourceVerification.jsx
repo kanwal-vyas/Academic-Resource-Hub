@@ -222,8 +222,8 @@ function EditModal({ resource, onClose, onSaved }) {
                       <label className="rv-edit-label">File</label>
                       {existingFileName && !newFile && <div className="rv-edit-existing-file"><span>📄</span><span className="rv-edit-filename">{existingFileName}</span><span className="rv-edit-file-tag">Current file</span></div>}
                       {newFile && <div className="rv-edit-existing-file rv-edit-existing-file--new"><span>📄</span><span className="rv-edit-filename">{newFile.name}</span><span className="rv-edit-file-tag rv-edit-file-tag--new">New file ✓</span><button className="rv-edit-file-remove" onClick={() => setNewFile(null)}>✕</button></div>}
-                      <label className="rv-edit-file-btn">{newFile ? '🔄 Change File' : existingFileName ? '🔄 Replace File' : '📂 Choose File'}<input type="file" style={{ display: 'none' }} accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.zip" onChange={e => { const f = e.target.files[0]; if (f) setNewFile(f); }} /></label>
-                      <p className="rv-edit-hint">Accepted: PDF, Word, PowerPoint, MP4, ZIP{existingFileName && !newFile ? '. Leave unchanged to keep current file.' : ''}</p>
+                      <label className="rv-edit-file-btn">{newFile ? '🔄 Change File' : existingFileName ? '🔄 Replace File' : '📂 Choose File'}<input type="file" style={{ display: 'none' }} accept=".pdf,application/pdf" onChange={e => { const f = e.target.files[0]; if (f) setNewFile(f); }} /></label>
+                      <p className="rv-edit-hint">Accepted: PDF files up to 10MB{existingFileName && !newFile ? '. Leave unchanged to keep current file.' : ''}</p>
                     </div>
                   )}
                 </div>

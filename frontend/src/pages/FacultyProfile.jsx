@@ -137,6 +137,8 @@ function FacultyProfile() {
   }
 
   const isOwner = user?.id === faculty.id || user?.role === "admin";
+  const isInitialized = (faculty.education && faculty.education.trim() !== '') || 
+                        (faculty.research_interests && faculty.research_interests.trim() !== '');
 
   const infoItems = [
     faculty.research_interests && {
@@ -193,7 +195,14 @@ function FacultyProfile() {
             <div className="fp-header-content">
               <div className="fp-avatar">{getInitials(faculty.full_name)}</div>
               <div className="fp-header-text">
-                <h1 className="fp-name">{faculty.full_name}</h1>
+                <div className="fp-header-title-row">
+                  <h1 className="fp-name">{faculty.full_name}</h1>
+                  {isOwner && (
+                    <span className={`fp-visibility-badge ${faculty.is_visible ? 'status-public' : 'status-private'}`}>
+                      {faculty.is_visible ? 'Public' : 'Private (Hidden)'}
+                    </span>
+                  )}
+                </div>
                 {faculty.education && (
                   <p className="fp-subtitle">{faculty.education}</p>
                 )}
@@ -228,6 +237,19 @@ function FacultyProfile() {
                   value={editForm.research_interests || ""}
                   onChange={handleChange}
                 ></textarea>
+              </div>
+
+              <div className="form-group form-group-checkbox visibility-toggle">
+                <label>
+                  <input
+                    type="checkbox"
+                    name="is_visible"
+                    checked={editForm.is_visible !== false}
+                    onChange={handleChange}
+                  />
+                  Show in Faculty Directory
+                  <span className="toggle-hint">If unchecked, your profile will be hidden from the public directory.</span>
+                </label>
               </div>
 
               <div className="form-group">
@@ -308,6 +330,11 @@ function FacultyProfile() {
                   onClick={handleSave}
                   disabled={saving}
                 >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                  </svg>
                   {saving ? "Saving..." : "Save Changes"}
                 </button>
                 <button
@@ -317,7 +344,12 @@ function FacultyProfile() {
                     setIsEditing(false);
                   }}
                   disabled={saving}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                 >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
                   Cancel
                 </button>
               </div>
@@ -335,72 +367,75 @@ function FacultyProfile() {
                 </div>
               )}
 
-              <div className="fp-availability-card">
-                <h3 className="fp-info-label">Availability</h3>
+              {/* Only show availability if profile is initialized or if there are open items */}
+              {(isInitialized || openItems.length > 0) && (
+                <div className="fp-availability-card">
+                  <h3 className="fp-info-label">Availability</h3>
 
-                {openItems.length === 0 ? (
-                  /* ── Nothing available ── */
-                  <div className="fp-unavailable-notice">
-                    <span className="fp-unavailable-icon">{isOwner ? '💡' : '🔕'}</span>
-                    <div>
-                      <p className="fp-unavailable-title">
-                        {isOwner ? 'Your availability is hidden' : 'Not accepting requests currently'}
-                      </p>
-                      <p className="fp-unavailable-sub">
-                        {isOwner 
-                          ? "You haven't marked yourself as open for internships, research, or mentoring. Click 'Edit Profile' above to update this."
-                          : `${faculty.full_name?.split(" ")[0] || "This faculty"} is not open for internships, research, or mentoring at the moment. Check back later.`
-                        }
+                  {openItems.length === 0 ? (
+                    /* ── Nothing available ── */
+                    <div className="fp-unavailable-notice">
+                      <span className="fp-unavailable-icon">{isOwner ? '💡' : '🔕'}</span>
+                      <div>
+                        <p className="fp-unavailable-title">
+                          {isOwner ? 'Your availability is hidden' : 'Not accepting requests currently'}
+                        </p>
+                        <p className="fp-unavailable-sub">
+                          {isOwner 
+                            ? "You haven't marked yourself as open for internships, research, or mentoring. Click 'Edit Profile' above to update this."
+                            : `${faculty.full_name?.split(" ")[0] || "This faculty"} is not open for internships, research, or mentoring at the moment. Check back later.`
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    /* ── Show only open opportunities ── */
+                    <div className="fp-availability-chips">
+                      {openItems.map(({ label, icon, key, details }) => {
+                        const isExpanded = expandedDetail === key;
+                        const canExpand = !!details;
+                        return (
+                          <div key={key} className="fp-availability-item">
+                            <span
+                              className={`fp-availability-badge fp-badge--open ${
+                                label === "Internships" ? "chip-interns" : ""
+                              } ${
+                                canExpand ? "fp-badge--clickable" : ""
+                              }`}
+                              onClick={() => {
+                                if (canExpand) {
+                                  setExpandedDetail(isExpanded ? null : key);
+                                }
+                              }}
+                            >
+                              {label === "Internships" ? (
+                                <span className="status-dot"></span>
+                              ) : (
+                                <span className="fp-badge-icon">{icon}</span>
+                              )}
+                              {label}
+                              {canExpand && (
+                                <span className="fp-badge-arrow">
+                                  {isExpanded ? "▲" : "▼"}
+                                </span>
+                              )}
+                            </span>
+
+                            {isExpanded && canExpand && (
+                              <div className="fp-availability-details">
+                                <p>{details}</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      <p className="fp-availability-hint">
+                        Click an option to see more details.
                       </p>
                     </div>
-                  </div>
-                ) : (
-                  /* ── Show only open opportunities ── */
-                  <div className="fp-availability-chips">
-                    {openItems.map(({ label, icon, key, details }) => {
-                      const isExpanded = expandedDetail === key;
-                      const canExpand = !!details;
-                      return (
-                        <div key={key} className="fp-availability-item">
-                          <span
-                            className={`fp-availability-badge fp-badge--open ${
-                              label === "Internships" ? "chip-interns" : ""
-                            } ${
-                              canExpand ? "fp-badge--clickable" : ""
-                            }`}
-                            onClick={() => {
-                              if (canExpand) {
-                                setExpandedDetail(isExpanded ? null : key);
-                              }
-                            }}
-                          >
-                            {label === "Internships" ? (
-                              <span className="status-dot"></span>
-                            ) : (
-                              <span className="fp-badge-icon">{icon}</span>
-                            )}
-                            {label}
-                            {canExpand && (
-                              <span className="fp-badge-arrow">
-                                {isExpanded ? "▲" : "▼"}
-                              </span>
-                            )}
-                          </span>
-
-                          {isExpanded && canExpand && (
-                            <div className="fp-availability-details">
-                              <p>{details}</p>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                    <p className="fp-availability-hint">
-                      Click an option to see more details.
-                    </p>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>
