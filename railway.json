@@ -1,0 +1,42 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "services": {
+    "backend": {
+      "name": "backend",
+      "source": {
+        "root": "backend"
+      },
+      "build": {
+        "builder": "NIXPACKS"
+      },
+      "deploy": {
+        "numReplicas": 1,
+        "sleepApplication": false
+      }
+    },
+    "frontend-student": {
+      "name": "frontend-student",
+      "source": {
+        "root": "frontend"
+      },
+      "build": {
+        "builder": "NIXPACKS"
+      },
+      "deploy": {
+        "numReplicas": 1
+      }
+    },
+    "admin-panel": {
+      "name": "admin-panel",
+      "source": {
+        "root": "admin-panel"
+      },
+      "build": {
+        "builder": "NIXPACKS"
+      },
+      "deploy": {
+        "numReplicas": 1
+      }
+    }
+  }
+}
