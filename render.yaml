@@ -24,7 +24,7 @@ services:
         value: "https://academic-hub-portal.onrender.com,https://academic-hub-admin.onrender.com"
 
   # 🎓 Student Portal (Frontend)
-  - type: static
+  - type: static_site
     name: academic-hub-portal
     plan: free
     rootDir: frontend
@@ -39,7 +39,7 @@ services:
         destination: /index.html
 
   # 🛡️ Admin Panel
-  - type: static
+  - type: static_site
     name: academic-hub-admin
     plan: free
     rootDir: admin-panel
