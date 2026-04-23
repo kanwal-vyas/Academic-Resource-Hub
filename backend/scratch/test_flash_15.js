@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 async function testFlash15() {
-  const key = "AIzaSyDLNpzi3L88-aHf-FJ1kzUev4MXD5P2OAI";
+  const key = "YOUR_API_KEY_HERE";
   console.log(`Testing with gemini-1.5-flash: ${key}`);
   const genAI = new GoogleGenerativeAI(key);
   try {
