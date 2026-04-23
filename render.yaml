@@ -1,0 +1,54 @@
+services:
+  # 🖥️ Backend API Service
+  - type: web
+    name: academic-hub-backend
+    env: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: GEMINI_API_KEYS
+        sync: false
+      - key: CORS_ORIGINS
+        value: "https://academic-hub-portal.onrender.com,https://academic-hub-admin.onrender.com"
+
+  # 🎓 Student Portal (Frontend)
+  - type: static
+    name: academic-hub-portal
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    envVars:
+      - key: VITE_API_URL
+        value: "https://academic-hub-backend.onrender.com"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # 🛡️ Admin Panel
+  - type: static
+    name: academic-hub-admin
+    plan: free
+    rootDir: admin-panel
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    envVars:
+      - key: VITE_API_URL
+        value: "https://academic-hub-backend.onrender.com"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

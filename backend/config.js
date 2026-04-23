@@ -41,10 +41,9 @@ export const config = {
     apiKey: process.env.GROQ_API_KEY,
     baseUrl: "https://api.groq.com/openai/v1"
   },
-  corsOrigins: [
-    "http://localhost:5173", 
-    "http://localhost:5100"
-  ],
+  corsOrigins: process.env.CORS_ORIGINS 
+    ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
+    : ["http://localhost:5173", "http://localhost:5100"],
   nodeEnv: process.env.NODE_ENV || 'development'
 };
 

@@ -85,6 +85,23 @@ npm run dev
 
 ---
 
+## 🚀 One-Click Deployment (Render Blueprint)
+
+This project is pre-configured for automated deployment on **Render** using the `render.yaml` Blueprint.
+
+### Steps to Deploy:
+1.  **Push your code** to GitHub.
+2.  Go to the [Render Dashboard](https://dashboard.render.com/).
+3.  Click **"New +"** and select **"Blueprint"**.
+4.  Connect your repository.
+5.  Render will automatically detect the `render.yaml` file and create all three services:
+    *   `academic-hub-backend` (Web Service)
+    *   `academic-hub-portal` (Static Site)
+    *   `academic-hub-admin` (Static Site)
+6.  **Configuration**: During the Blueprint setup, you will be prompted to enter your secret environment variables (Database URL, Supabase keys, Gemini keys).
+
+---
+
 ## 🔐 Role-Based Access Control (RBAC)
 
 | Role | Responsibility | Capability |
