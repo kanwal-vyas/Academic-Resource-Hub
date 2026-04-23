@@ -1,99 +1,112 @@
-# Academic Resource Hub
+# 🎓 Academic Resource Hub
 
-A multi-module academic resource sharing platform for universities. Built with React (Vite) + Node.js (Express) + PostgreSQL (Supabase).
+A high-fidelity, multi-module academic resource sharing ecosystem designed for **Rashtriya Raksha University (RRU)**. This platform empowers students and faculty to seamlessly share, verify, and interact with academic materials using cutting-edge AI and real-time synchronization.
 
 ---
 
-## 📦 Project Structure
+## ✨ Key Features
 
-```
+### 🤖 Intelligent Academic Assistant
+- **AI-Powered Summarization**: Instantly generate "Quick Snapshots" of lengthy PDF resources using **Gemini 2.0 Flash** or **Llama 3.1**.
+- **OCR Integration**: Robust text extraction from scanned documents using Tesseract.js and PDF.js.
+- **Contextual Chat**: Interactive chatbot that understands the specific resource you are viewing and provides professional, concise answers.
+- **Navigation Shortcuts**: AI-driven navigation suggestions (e.g., `[NAVIGATE:/upload]`) to streamline user workflow.
+
+### 📡 Real-Time Ecosystem
+- **Instant Notifications**: Powered by **Socket.IO**. Users receive live alerts when new resources are uploaded to their enrolled courses.
+- **Dynamic Updates**: Real-time verification status tracking for contributors.
+
+### 🛡️ Enterprise-Grade Admin Control
+- **Verification Queue**: Dedicated panel for administrators to vet and approve resources before they go public.
+- **User Management**: Ability to suspend users, manage roles, and monitor system-wide activity.
+- **Analytics Dashboard**: Visual overview of platform growth, popular subjects, and contributor engagement.
+
+### 🎨 Premium UI/UX
+- **"Forest Cream" Design Language**: A curated, harmonious color palette inspired by nature and academic excellence.
+- **Liquid Motion Suite**: Smooth, staggered entrance animations and tactile micro-interactions for a premium feel.
+- **Zero-Scroll Dashboards**: Optimized layouts that fit perfectly within the viewport.
+
+---
+
+## 🏗️ Project Architecture
+
+The project is structured as a **monorepo** utilizing npm workspaces for efficient dependency management and orchestrated service launches.
+
+```text
 Academic-Resource-Hub/
-├── frontend/          # 🎓 Student & Faculty Portal  → http://localhost:5173
-├── admin-panel/       # 🛡️  Admin Panel              → http://localhost:5100
-├── backend/           # 🖥️  Express API Server        → http://localhost:5000
-└── package.json       # Root workspace (concurrently)
+├── frontend/          # 🎓 Student & Faculty Portal (Vite + React)
+├── admin-panel/       # 🛡️ Administrator HUD (Vite + React)
+├── backend/           # 🖥️  Express API Gateway (Node.js + PostgreSQL)
+└── package.json       # Root orchestrator with concurrently
 ```
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Getting Started
 
-### 1. Install all dependencies
+### 1. Prerequisites
+- **Node.js** (v18+ recommended)
+- **PostgreSQL** (via Supabase)
+- **Supabase Account** for Auth and Storage
+
+### 2. Installation
+Install all dependencies for all modules with a single command from the root directory:
 ```bash
 npm install
 ```
-*(This will install dependencies for all workspaces: frontend, admin-panel, and backend)*
 
-### 2. Configure environment variables
-Copy the `.env.example` files in each directory (`backend`, `frontend`, `admin-panel`) and fill in your Supabase and Cloudinary credentials.
+### 3. Environment Configuration
+Create `.env` files in each module based on their respective `.env.example` templates.
 
-```bash
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-cp admin-panel/.env.example admin-panel/.env
+#### Backend (`backend/.env`):
+```ini
+DATABASE_URL=your_postgres_connection_string
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+GEMINI_API_KEYS=key1,key2  # Supports rotation
+PORT=5000
 ```
 
-### 3. Run all services (from root)
+#### Frontend & Admin (`frontend/.env` & `admin-panel/.env`):
+```ini
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
+VITE_API_URL=http://localhost:5000
+```
+
+### 4. Running the Development Suite
+Launch all services simultaneously with labelled logs:
 ```bash
 npm run dev
 ```
-
-This starts all 3 services concurrently with labelled output.
-
-### Or run individually:
-```bash
-npm run dev:backend    # Backend only   → :5000
-npm run dev:frontend   # Frontend only  → :5173
-npm run dev:admin      # Admin panel    → :5100
-```
+- **Student Portal**: `http://localhost:5173`
+- **Admin HUD**: `http://localhost:5100`
+- **API Server**: `http://localhost:5000`
 
 ---
 
-## 🔐 Role System
+## 🔐 Role-Based Access Control (RBAC)
 
-| Role | Email Pattern | Access Level |
-|---|---|---|
-| `student` | `@student.rru.ac.in` | Browse and download resources |
-| `faculty` | `@rru.ac.in` | Upload and manage own resources |
-| `admin` | Internal | System management & resource verification |
+| Role | Responsibility | Capability |
+|:---:|---|---|
+| **Student** | Resource Consumption | Browse, Download, AI Chat, Course Notifications |
+| **Faculty** | Content Contribution | Upload Materials, Manage own resources, AI Summaries |
+| **Admin** | System Governance | Verify Content, Manage Users, Platform Analytics |
 
-### Faculty Verification
-- Users with `@rru.ac.in` are automatically assigned the `faculty` role.
-- Faculty can upload resources which are visible to students once verified by an administrator.
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Frontend | React 19, Vite, React Router v7 |
-| Backend | Node.js, Express, PostgreSQL (via Pool) |
-| Auth & DB | Supabase (Auth + Storage + PostgreSQL) |
-| Styling | Vanilla CSS with modern aesthetics |
+> [!TIP]
+> **Faculty Auto-Verification**: Users registering with an institutional email (e.g., `@rru.ac.in`) are automatically granted Faculty permissions.
 
 ---
 
-## 📡 Key API Endpoints
+## 🛠️ Technology Stack
 
-### Auth
-- `POST /api/auth/login` — User authentication
-- `POST /api/auth/register` — New user registration
-
-### Resources
-- `GET  /resources` — Fetch public resources
-- `POST /resources/file` — Upload file-based resource
-- `POST /resources` — Add external link resource
-- `GET  /resources/my` — Fetch resources uploaded by current user
-
-### Admin
-- `GET  /api/admin/stats` — Dashboard overview
-- `GET  /api/admin/resources/pending` — List resources awaiting verification
-- `PUT  /api/admin/resources/:id/verify` — Approve a resource
+- **Frontend**: React 19, Vite, React Router v7, Socket.IO Client.
+- **Backend**: Node.js, Express, PostgreSQL (via `pg-pool`), Socket.IO Server.
+- **AI/ML**: Google Gemini 2.0 Flash, Groq (Llama 3.1), Tesseract.js (OCR).
+- **Cloud Infrastructure**: Supabase (Auth, DB, Storage), Cloudinary (Image optimization).
+- **Styling**: Modern Vanilla CSS, Liquid Motion Orchestration.
 
 ---
 
-## 🏗️ Build for Production
-```bash
-npm run build:all   # Builds frontend and admin-panel
-```
+## 📜 License
+This project is for academic purposes at **Rashtriya Raksha University**. All rights reserved.
