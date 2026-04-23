@@ -1,265 +1,155 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { OpenAI } from "openai";
 import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 import config from '../config.js';
 
-// --- API Key Management & Client Initialization ---
+// --- Client Initializations ---
 const apiKeys = config.gemini.allKeys;
+const geminiClients = apiKeys.map(key => new GoogleGenerativeAI(key));
 
-if (apiKeys.length === 0) {
-  console.warn("WARNING: No Gemini API keys found in configuration.");
-}
-
-// Map each key to its own GoogleGenerativeAI instance
-const clients = apiKeys.map(key => new GoogleGenerativeAI(key));
+// Groq is OpenAI-compatible
+const groqClient = config.groq.apiKey ? new OpenAI({
+  apiKey: config.groq.apiKey,
+  baseURL: config.groq.baseUrl
+}) : null;
 
 /**
- * Executes an AI operation with automatic retry/rotation on 429 errors.
- * @param {Function} operationFn - A function that takes a (client, index) and returns a promise
- * @returns {Promise<any>}
+ * Helper to determine which provider to use.
+ * Prioritizes Groq if a key is provided.
  */
 async function executeAIOperation(operationFn) {
-  if (clients.length === 0) {
-    throw new Error("Gemini API is not configured. (Missing keys)");
-  }
-
-  let lastError = null;
-
-  // Try each client sequentially if we hit a rate limit
-  for (let i = 0; i < clients.length; i++) {
+  if (groqClient) {
     try {
-      const result = await operationFn(clients[i], i);
-      return result;
+      return await operationFn(groqClient, 'groq');
     } catch (error) {
-      lastError = error;
-      
-      // Specifically check for "Too Many Requests" (429) or quota errors
-      const errorMsg = error.message?.toLowerCase() || "";
-      const isQuotaError = 
-        error.status === 429 || 
-        errorMsg.includes("429") || 
-        errorMsg.includes("quota") || 
-        errorMsg.includes("too many requests") ||
-        errorMsg.includes("exhausted");
-
-      if (isQuotaError && i < apiKeys.length - 1) {
-        console.warn(`Gemini API Key #${i+1} hit quota limit. Rotating to key #${i+2}...`);
-        continue; // Try next key
-      }
-      
-      // If quota exhausted on ALL keys
-      if (isQuotaError) {
-        const quotaError = new Error("The AI Assistant is currently receiving a high volume of requests. Please try again in 1-2 minutes!");
-        quotaError.isQuotaExceeded = true;
-        throw quotaError;
-      }
-
-      // If it's not a quota error, rethrow
-      break; 
+      console.error("Groq Error:", error.message);
+      if (geminiClients.length === 0) throw error;
+      console.warn("Groq failed. Falling back to Gemini...");
     }
   }
 
+  // Gemini Fallback Logic
+  if (geminiClients.length === 0) {
+    throw new Error("No AI providers configured (Missing Groq or Gemini keys)");
+  }
+
+  let lastError = null;
+  for (let i = 0; i < geminiClients.length; i++) {
+    try {
+      return await operationFn(geminiClients[i], 'gemini', i);
+    } catch (error) {
+      lastError = error;
+      const errorMsg = error.message?.toLowerCase() || "";
+      const isQuotaError = error.status === 429 || errorMsg.includes("429") || errorMsg.includes("quota");
+
+      if (isQuotaError && i < apiKeys.length - 1) {
+        console.warn(`Gemini Key #${i+1} hit quota. Rotating...`);
+        continue;
+      }
+      
+      if (isQuotaError) {
+        const quotaError = new Error("The AI Assistant is currently very busy. Please try again in a few moments!");
+        quotaError.isQuotaExceeded = true;
+        throw quotaError;
+      }
+      break; 
+    }
+  }
   throw lastError;
 }
 
-
-// --- Imports ---
-
+// --- Text Extraction ---
 import { createCanvas, loadImage } from 'canvas';
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import Tesseract from 'tesseract.js';
 
-/**
- * Extracts text from a PDF buffer.
- * Falls back to OCR if digital text is not found.
- * @param {Buffer} buffer 
- * @returns {Promise<string>}
- */
 export async function extractTextFromPDF(buffer) {
   try {
     const uint8Array = new Uint8Array(buffer);
-    const loadingTask = pdfjs.getDocument({
-      data: uint8Array,
-      useSystemFonts: true,
-      disableFontFace: true
-    });
+    const loadingTask = pdfjs.getDocument({ data: uint8Array, useSystemFonts: true, disableFontFace: true });
     const doc = await loadingTask.promise;
     let text = "";
-    
     for (let i = 1; i <= doc.numPages; i++) {
       const page = await doc.getPage(i);
       const content = await page.getTextContent();
-      const strings = content.items.map(item => item.str);
-      text += strings.join(" ") + "\n";
+      text += content.items.map(item => item.str).join(" ") + "\n";
     }
-
-    
-    // Fallback to OCR if digital text is empty or nearly empty
-    if (text.trim().length < 50) {
-      console.log('No digital text found. Triggering OCR fallback...');
-      text = await performOCR(buffer);
-    }
-    
+    if (text.trim().length < 50) text = await performOCR(buffer);
     return text;
   } catch (error) {
-    console.error("Error extracting text from PDF:", error);
     throw new Error("Failed to extract text from PDF");
   }
 }
 
-/**
- * Performs OCR on a PDF by converting pages to images first.
- * @param {Buffer} buffer 
- * @returns {Promise<string>}
- */
 async function performOCR(buffer) {
-  const OCR_PAGE_LIMIT = 10;
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(buffer), useSystemFonts: true, disableFontFace: true }).promise;
+  const numPages = Math.min(doc.numPages, 10);
   let ocrText = "";
-
-  try {
-    const uint8Array = new Uint8Array(buffer);
-    const loadingTask = pdfjs.getDocument({
-      data: uint8Array,
-      useSystemFonts: true,
-      disableFontFace: true
-    });
-    
-    const doc = await loadingTask.promise;
-    const numPages = Math.min(doc.numPages, OCR_PAGE_LIMIT);
-    
-    console.log(`Starting OCR for ${numPages} pages...`);
-
-    for (let i = 1; i <= numPages; i++) {
-      const page = await doc.getPage(i);
-      const viewport = page.getViewport({ scale: 2.0 }); // High scale for better OCR
-      const canvas = createCanvas(viewport.width, viewport.height);
-      const context = canvas.getContext('2d');
-
-      await page.render({
-        canvasContext: context,
-        viewport: viewport
-      }).promise;
-
-      const imageBuffer = canvas.toBuffer('image/png');
-      const { data: { text } } = await Tesseract.recognize(imageBuffer, 'eng');
-      ocrText += `--- Page ${i} ---\n${text}\n\n`;
-      console.log(`OCR complete for page ${i}/${numPages}`);
-    }
-
-    return ocrText;
-  } catch (err) {
-    console.error('OCR Process failed:', err);
-    throw new Error('Failed to extract text via OCR fallback');
+  for (let i = 1; i <= numPages; i++) {
+    const page = await doc.getPage(i);
+    const viewport = page.getViewport({ scale: 2.0 });
+    const canvas = createCanvas(viewport.width, viewport.height);
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    const { data: { text } } = await Tesseract.recognize(canvas.toBuffer('image/png'), 'eng');
+    ocrText += `--- Page ${i} ---\n${text}\n\n`;
   }
+  return ocrText;
 }
 
-/**
- * @param {string} text 
- * @returns {Promise<string>}
- */
-export async function generateSummary(text) {
-  return executeAIOperation(async (client, index) => {
-    try {
-      const prompt = `
-        You are an expert academic assistant. Summarize the following academic resource text into a concise "Quick Snapshot".
-        Provide the summary in a clean, structured format.
-        - Use '###' for section titles.
-        - Use '**' for bold labels or key terms.
-        - Use '*' or '-' for bullet points.
-        
-        The summary must focus on key concepts, main objectives, and important takeaways.
-        Keep the tone professional and helpful for a student.
-        Maximum length: 200 words.
-        
-        Text to summarize:
-        ${text.substring(0, 30000)}
-      `;
+// --- AI Features ---
 
+export async function generateSummary(text) {
+  return executeAIOperation(async (client, provider) => {
+    const prompt = `Summarize this academic text into a concise "Quick Snapshot" (max 200 words):\n\n${text.substring(0, 30000)}`;
+    
+    if (provider === 'groq') {
+      const completion = await client.chat.completions.create({
+        model: "llama-3.1-8b-instant",
+        messages: [{ role: "user", content: prompt }],
+      });
+      return completion.choices[0].message.content;
+    } else {
       const model = client.getGenerativeModel({ model: "gemini-2.0-flash" });
       const result = await model.generateContent(prompt);
-      const response = await result.response;
-      return response.text();
-    } catch (error) {
-      console.error(`Error generating summary with Gemini Key #${index + 1}:`, error);
-      throw error; // Re-throw so executeAIOperation can handle rotation
+      return result.response.text();
     }
-  }).catch(error => {
-    throw new Error(`AI Summarizer Error: ${error.message}`);
   });
 }
 
-/**
- * @param {Array<{role: string, message: string}>} history 
- * @param {string} userMessage 
- * @param {Object} context 
- * @param {Object} globalContext
- * @returns {Promise<string>}
- */
 export async function chatWithAI(history, userMessage, context = null, globalContext = null) {
-  return executeAIOperation(async (client, index) => {
-    try {
-      let globalInfo = "";
-      if (globalContext) {
-        globalInfo = `
-          ACADEMIC HUB OVERVIEW:
-          - Total Resources currently available: ${globalContext.totalResources || 0}
-        `;
-      }
+  return executeAIOperation(async (client, provider) => {
+    const systemInstruction = `
+      You are the "Academic Assistant" for the Academic Resource Hub. Be professional and concise (2-3 sentences max).
+      Platform Info: Rashtriya Raksha University (RRU) SITAICS material sharing. Find Unit Notes, Question Papers, Assignments here.
+      Navigation tags: [NAVIGATE:/browse|Browse], [NAVIGATE:/faculty|Faculty], [NAVIGATE:/upload|Upload].
+      ${context ? `Current Context: ${context.title} (${context.subject_name})` : ''}
+    `;
 
+    if (provider === 'groq') {
+      const messages = [
+        { role: "system", content: systemInstruction },
+        ...history.map(h => ({ role: h.role === 'user' ? 'user' : 'assistant', content: h.message })),
+        { role: "user", content: userMessage }
+      ];
+      const completion = await client.chat.completions.create({
+        model: "llama-3.1-8b-instant",
+        messages,
+        max_tokens: 150
+      });
+      return completion.choices[0].message.content;
+    } else {
       const model = client.getGenerativeModel({ 
         model: "gemini-2.0-flash",
-        systemInstruction: `
-          You are the "Academic Assistant" for the Academic Resource Hub. 
-          Your goal is to provide EXTREMELY BRIEF, direct, and helpful answers.
-          
-          PROJECT OVERVIEW:
-          - This is a centralized platform for RRU SITAICS students and faculty to share academic materials.
-          - Users can find Unit Notes, Question Papers, Assignments, and Reading Materials here.
-          - Faculty can upload resources; Students can browse and download them once verified by Admin.
-
-          NAVIGATION MAP (Use specific tags ONLY):
-          - Browse/Find Notes/Search: [NAVIGATE:/browse|Browse Resources]
-          - Faculty/Teachers/Staff: [NAVIGATE:/faculty|Faculty Directory]
-          - Upload/Contribution: [NAVIGATE:/upload|Upload Resource]
-          - My Profile/My Uploads: [NAVIGATE:/my-resources|My Resources]
-          - Dashboard/Latest: [NAVIGATE:/|Dashboard]
-          - Help/Admin Contact: [NAVIGATE:/contact|Contact Admin]
-
-          ${globalInfo}
-          
-          ${context ? `
-          CURRENT RESOURCE FOCUS (Answer based on this):
-          - Title: ${context.title}
-          - Type: ${context.resource_type}
-          - Subject: ${context.subject_name}
-          - Description: ${context.description}
-          ` : 'General Context: Help the user find resources or navigate efficiently.'}
-
-          CORE BEHAVIOR:
-          1. Be professional but very concise (2-3 sentences max).
-          2. Give direct answers.
-          3. Use [NAVIGATE:path|Label] only when recommending a specific next step. 
-          4. When asked "What is this project?" or similar, describe the "Academic Resource Hub" as the official RRU SITAICS material sharing platform.
-        `
+        systemInstruction
       });
-
       const chat = model.startChat({
         history: history.map(h => ({
           role: h.role === 'user' ? 'user' : 'model',
           parts: [{ text: h.message }]
         })),
       });
-
       const result = await chat.sendMessage(userMessage);
-      const response = await result.response;
-      return response.text();
-    } catch (error) {
-      console.error(`Error in AI chat session with Key #${index + 1}:`, error);
-      throw error;
+      return result.response.text();
     }
-  }).catch(error => {
-    // If it's our custom quota error, rethrow it directly
-    if (error.isQuotaExceeded) throw error;
-    throw new Error(`AI Assistant Error: ${error.message}`);
   });
 }
-

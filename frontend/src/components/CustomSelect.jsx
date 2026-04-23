@@ -11,7 +11,7 @@ import './CustomSelect.css';
  * @param {string} placeholder - Text when no value is selected
  * @param {string} label - Optional label above the select
  */
-const CustomSelect = ({ options, value, onChange, placeholder = "Select...", label }) => {
+const CustomSelect = ({ options, value, onChange, placeholder = "Select...", label, disabled }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
@@ -30,15 +30,19 @@ const CustomSelect = ({ options, value, onChange, placeholder = "Select...", lab
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleToggle = () => setIsOpen(!isOpen);
+  const handleToggle = () => {
+    if (disabled) return;
+    setIsOpen(!isOpen);
+  };
 
   const handleSelect = (val) => {
+    if (disabled) return;
     onChange(val);
     setIsOpen(false);
   };
 
   return (
-    <div className={`custom-select-container ${isOpen ? 'is-open' : ''}`} ref={containerRef}>
+    <div className={`custom-select-container ${isOpen ? 'is-open' : ''} ${disabled ? 'is-disabled' : ''}`} ref={containerRef}>
       {label && <label className="custom-select-label">{label}</label>}
       
       <div className="custom-select-trigger" onClick={handleToggle}>

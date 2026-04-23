@@ -124,6 +124,8 @@ function Browse() {
   const [dbRole, setDbRole] = useState(null);
   const [allFaculties, setAllFaculties] = useState([]);
   const [allCourses, setAllCourses] = useState([]);
+  const [allSubjects, setAllSubjects] = useState([]);
+  const [allUnits, setAllUnits] = useState([]);
 
   useEffect(() => {
     async function fetchMe() {
@@ -170,6 +172,24 @@ function Browse() {
         if (courseRes.ok) {
           const result = await courseRes.json();
           setAllCourses(result.data || []);
+        }
+
+        // Fetch All Subjects (Taxonomy)
+        const subRes = await fetch(`${API_BASE_URL}/subjects`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (subRes.ok) {
+          const result = await subRes.json();
+          setAllSubjects(result.data || []);
+        }
+
+        // Fetch All Units (Taxonomy)
+        const unitRes = await fetch(`${API_BASE_URL}/units`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (unitRes.ok) {
+          const result = await unitRes.json();
+          setAllUnits(result.data || []);
         }
       } catch (err) {
         console.error("Failed to fetch filters data:", err);
@@ -270,18 +290,29 @@ function Browse() {
     ].filter(Boolean))
   ).sort();
 
-  // Derive units for selected course
-  const unitsForCourse = Array.from(
+  // Derive unique subjects from taxonomy and resources
+  const subjects = Array.from(
+    new Set([
+      ...allSubjects
+        .filter(s => !selectedCourse || s.course_name === selectedCourse)
+        .map(s => s.name),
+      ...resources
+        .filter(r => !selectedCourse || r.course_name === selectedCourse)
+        .map(r => r.subject_name)
+    ].filter(Boolean))
+  ).sort();
+
+  // Derive units for selected subject from taxonomy and resources
+  const unitsForCourse = !selectedSubject ? [] : Array.from(
     new Map(
-      resources
-        .filter((r) => r.unit_number)
-        .map((r) => [
-          r.unit_number,
-          {
-            unit_number: r.unit_number,
-            unit_title: r.unit_title,
-          },
-        ])
+      [
+        ...allUnits
+          .filter(u => u.subject_name === selectedSubject)
+          .map(u => [u.unit_number, { unit_number: u.unit_number, unit_title: "" }]),
+        ...resources
+          .filter(r => r.unit_number && r.subject_name === selectedSubject)
+          .map(r => [r.unit_number, { unit_number: r.unit_number, unit_title: r.unit_title }])
+      ]
     ).values()
   ).sort((a, b) => a.unit_number - b.unit_number);
 
@@ -294,11 +325,6 @@ function Browse() {
   const resourceTypes = Array.from(
     new Set(resources.map((r) => r.resource_type).filter(Boolean))
   );
-
-  // Derive unique subjects
-  const subjects = Array.from(
-    new Set(resources.map((r) => r.subject_name).filter(Boolean))
-  ).sort();
 
   // Derive unique faculty from resources (as fallback/active list)
   const activeFacultiesFromResources = Array.from(
@@ -395,8 +421,16 @@ function Browse() {
 
   const handleCourseChange = (course) => {
     setSelectedCourse(course);
-    setSelectedUnit("");
     setSelectedSubject("");
+    setSelectedUnit("");
+    setSelectedFaculty("");
+    setTypeFilter("all");
+    setYearFilter("all");
+  };
+
+  const handleSubjectChange = (subject) => {
+    setSelectedSubject(subject);
+    setSelectedUnit("");
     setSelectedFaculty("");
     setTypeFilter("all");
     setYearFilter("all");
@@ -404,7 +438,6 @@ function Browse() {
 
   const handleUnitChange = (unit) => {
     setSelectedUnit(unit);
-    setSelectedSubject("");
     setSelectedFaculty("");
     setTypeFilter("all");
     setYearFilter("all");
@@ -452,29 +485,30 @@ function Browse() {
                 />
               </FilterGroup>
 
-              {/* Unit Filter */}
-              <FilterGroup label="Syllabus Unit">
-                <CustomSelect
-                  options={[
-                    { value: "", label: "All Units" },
-                    ...unitsForCourse.map((u) => ({
-                      value: u.unit_number,
-                      label: `Unit ${u.unit_number}: ${u.unit_title}`,
-                    })),
-                  ]}
-                  value={selectedUnit}
-                  onChange={handleUnitChange}
-                  placeholder="All Units"
-                />
-              </FilterGroup>
-
               {/* Subject Filter */}
               <FilterGroup label="Subject">
                 <CustomSelect
                   options={formatOptions(subjects, "All Subjects")}
                   value={selectedSubject}
-                  onChange={setSelectedSubject}
+                  onChange={handleSubjectChange}
                   placeholder="All Subjects"
+                />
+              </FilterGroup>
+
+              {/* Unit Filter */}
+              <FilterGroup label="Syllabus Unit">
+                <CustomSelect
+                  options={[
+                    { value: "", label: selectedSubject ? "All Units" : "Select a subject first" },
+                    ...unitsForCourse.map((u) => ({
+                      value: u.unit_number,
+                      label: `Unit ${u.unit_number}${u.unit_title ? ': ' + u.unit_title : ''}`,
+                    })),
+                  ]}
+                  value={selectedUnit}
+                  onChange={handleUnitChange}
+                  placeholder={selectedSubject ? "All Units" : "Select a subject first"}
+                  disabled={!selectedSubject}
                 />
               </FilterGroup>
 

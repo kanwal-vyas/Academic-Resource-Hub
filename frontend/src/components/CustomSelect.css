@@ -28,6 +28,17 @@
   box-shadow: 0 0 0 3px var(--accent-glow, rgba(107, 142, 127, 0.15));
 }
 
+.custom-select-container.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.custom-select-container.is-disabled .custom-select-trigger {
+  background-color: var(--border);
+  cursor: not-allowed;
+}
+
 .custom-select-value {
   font-size: 0.9375rem;
   font-weight: 500;

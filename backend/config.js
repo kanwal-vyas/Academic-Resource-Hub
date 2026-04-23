@@ -37,6 +37,10 @@ export const config = {
       ? process.env.GEMINI_API_KEYS.split(',').map(k => k.trim()).filter(k => k.length > 0)
       : [process.env.GEMINI_API_KEY]
   },
+  groq: {
+    apiKey: process.env.GROQ_API_KEY,
+    baseUrl: "https://api.groq.com/openai/v1"
+  },
   corsOrigins: [
     "http://localhost:5173", 
     "http://localhost:5100"
