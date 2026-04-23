@@ -20,5 +20,7 @@ services:
         sync: false
       - key: GEMINI_API_KEYS
         sync: false
+      - key: GROQ_API_KEY
+        sync: false
       - key: CORS_ORIGINS
         value: "https://academic-hub-portal.onrender.com,https://academic-hub-admin.onrender.com"
