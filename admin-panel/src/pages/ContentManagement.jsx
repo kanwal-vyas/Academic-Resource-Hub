@@ -272,6 +272,8 @@ function SubjectsTab() {
 // TAB: ACADEMIC YEARS
 // ============================================================================
 function AcademicYearsTab() {
+  const [years, setYears] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -306,7 +308,7 @@ function AcademicYearsTab() {
     <div className="cm-tab-content">
       <div className="cm-tab-header">
         <h3 className="cm-tab-title">Academic Years <span className="cm-count">{years.length}</span></h3>
-        <button className="cm-btn cm-btn-primary" onClick={() => setShowAdd(true)}>+ Add Year</button>
+        <button className="cm-btn cm-btn-primary" onClick={() => { setEditing(null); setForm({ start_year: '', end_year: '' }); setShowModal(true); }}>+ Add Year</button>
       </div>
       {loading ? <div className="cm-loading">Loading...</div> : (
         <div className="cm-table-wrapper">
