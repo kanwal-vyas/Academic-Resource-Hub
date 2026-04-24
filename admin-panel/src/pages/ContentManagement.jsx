@@ -54,7 +54,8 @@ function DeleteConfirm({ item, onConfirm, onClose, loading }) {
 function CoursesTab() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [toast, setToast] = useState(null);
@@ -71,10 +72,15 @@ function CoursesTab() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleAdd = async (e) => {
+  const openAdd = () => { setEditing(null); setForm({ code: '', name: '', degree_type: '', department: '' }); setShowModal(true); };
+  const openEdit = (c) => { setEditing(c); setForm({ code: c.code, name: c.name, degree_type: c.degree_type || '', department: c.department || '' }); setShowModal(true); };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await api('/courses', { method: 'POST', body: JSON.stringify(form) });
-    if (res.ok) { setShowAdd(false); setForm({ code: '', name: '', degree_type: '', department: '' }); load(); showToast('Course created!'); }
+    const method = editing ? 'PUT' : 'POST';
+    const path = editing ? `/courses/${editing.id}` : '/courses';
+    const res = await api(path, { method, body: JSON.stringify(form) });
+    if (res.ok) { setShowModal(false); setForm({ code: '', name: '', degree_type: '', department: '' }); load(); showToast(editing ? 'Course updated!' : 'Course created!'); }
     else { const d = await res.json(); showToast(d.error || 'Failed', 'error'); }
   };
 
@@ -90,7 +96,7 @@ function CoursesTab() {
     <div className="cm-tab-content">
       <div className="cm-tab-header">
         <h3 className="cm-tab-title">Courses <span className="cm-count">{courses.length}</span></h3>
-        <button className="cm-btn cm-btn-primary" onClick={() => setShowAdd(true)}>+ Add Course</button>
+        <button className="cm-btn cm-btn-primary" onClick={openAdd}>+ Add Course</button>
       </div>
 
       {loading ? <div className="cm-loading">Loading...</div> : (
@@ -108,7 +114,10 @@ function CoursesTab() {
                   <td>{c.department || '—'}</td>
                   <td><span className="cm-count-small">{c.subject_count}</span></td>
                   <td>
-                    <button className="cm-icon-btn cm-icon-btn--danger" onClick={() => setConfirmDelete(c)} title="Delete">🗑</button>
+                    <div className="cm-actions">
+                      <button className="cm-icon-btn cm-icon-btn--primary" onClick={() => openEdit(c)} title="Edit">✏️</button>
+                      <button className="cm-icon-btn cm-icon-btn--danger" onClick={() => setConfirmDelete(c)} title="Delete">🗑</button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -117,9 +126,9 @@ function CoursesTab() {
         </div>
       )}
 
-      {showAdd && (
-        <Modal title="Add Course" onClose={() => setShowAdd(false)}>
-          <form className="cm-form" onSubmit={handleAdd}>
+      {showModal && (
+        <Modal title={editing ? "Edit Course" : "Add Course"} onClose={() => setShowModal(false)}>
+          <form className="cm-form" onSubmit={handleSubmit}>
             <div className="cm-form-row">
               <div className="cm-field"><label>Course Code *</label><input required placeholder="e.g. BCA" value={form.code} onChange={e => setForm(p => ({ ...p, code: e.target.value }))} /></div>
               <div className="cm-field"><label>Degree Type</label><input placeholder="e.g. Bachelors" value={form.degree_type} onChange={e => setForm(p => ({ ...p, degree_type: e.target.value }))} /></div>
@@ -127,8 +136,8 @@ function CoursesTab() {
             <div className="cm-field"><label>Course Name *</label><input required placeholder="e.g. Bachelor of Computer Applications" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} /></div>
             <div className="cm-field"><label>Department</label><input placeholder="e.g. Computer Science" value={form.department} onChange={e => setForm(p => ({ ...p, department: e.target.value }))} /></div>
             <div className="cm-modal-actions">
-              <button type="submit" className="cm-btn cm-btn-primary">Create Course</button>
-              <button type="button" className="cm-btn cm-btn-ghost" onClick={() => setShowAdd(false)}>Cancel</button>
+              <button type="submit" className="cm-btn cm-btn-primary">{editing ? 'Update Course' : 'Create Course'}</button>
+              <button type="button" className="cm-btn cm-btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
             </div>
           </form>
         </Modal>
@@ -151,7 +160,8 @@ function SubjectsTab() {
   const [courses, setCourses] = useState([]);
   const [filterCourse, setFilterCourse] = useState('');
   const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [toast, setToast] = useState(null);
@@ -172,10 +182,15 @@ function SubjectsTab() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleAdd = async (e) => {
+  const openAdd = () => { setEditing(null); setForm({ code: '', name: '', course_id: '' }); setShowModal(true); };
+  const openEdit = (s) => { setEditing(s); setForm({ code: s.code, name: s.name, course_id: s.course_id }); setShowModal(true); };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await api('/subjects', { method: 'POST', body: JSON.stringify(form) });
-    if (res.ok) { setShowAdd(false); setForm({ code: '', name: '', course_id: '' }); load(); showToast('Subject created!'); }
+    const method = editing ? 'PUT' : 'POST';
+    const path = editing ? `/subjects/${editing.id}` : '/subjects';
+    const res = await api(path, { method, body: JSON.stringify(form) });
+    if (res.ok) { setShowModal(false); setForm({ code: '', name: '', course_id: '' }); load(); showToast(editing ? 'Subject updated!' : 'Subject created!'); }
     else { const d = await res.json(); showToast(d.error || 'Failed', 'error'); }
   };
 
@@ -196,7 +211,7 @@ function SubjectsTab() {
             <option value="">All Courses</option>
             {courses.map(c => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
           </select>
-          <button className="cm-btn cm-btn-primary" onClick={() => setShowAdd(true)}>+ Add Subject</button>
+          <button className="cm-btn cm-btn-primary" onClick={openAdd}>+ Add Subject</button>
         </div>
       </div>
 
@@ -212,7 +227,12 @@ function SubjectsTab() {
                   <td><span className="cm-code-badge">{s.code}</span></td>
                   <td className="cm-name">{s.name}</td>
                   <td>{s.course_name}</td>
-                  <td><button className="cm-icon-btn cm-icon-btn--danger" onClick={() => setConfirmDelete(s)} title="Delete">🗑</button></td>
+                  <td>
+                    <div className="cm-actions">
+                      <button className="cm-icon-btn cm-icon-btn--primary" onClick={() => openEdit(s)} title="Edit">✏️</button>
+                      <button className="cm-icon-btn cm-icon-btn--danger" onClick={() => setConfirmDelete(s)} title="Delete">🗑</button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -220,9 +240,9 @@ function SubjectsTab() {
         </div>
       )}
 
-      {showAdd && (
-        <Modal title="Add Subject" onClose={() => setShowAdd(false)}>
-          <form className="cm-form" onSubmit={handleAdd}>
+      {showModal && (
+        <Modal title={editing ? "Edit Subject" : "Add Subject"} onClose={() => setShowModal(false)}>
+          <form className="cm-form" onSubmit={handleSubmit}>
             <div className="cm-field">
               <label>Course *</label>
               <select required value={form.course_id} onChange={e => setForm(p => ({ ...p, course_id: e.target.value }))}>
@@ -235,8 +255,8 @@ function SubjectsTab() {
             </div>
             <div className="cm-field"><label>Subject Name *</label><input required placeholder="e.g. Data Structures" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} /></div>
             <div className="cm-modal-actions">
-              <button type="submit" className="cm-btn cm-btn-primary">Create Subject</button>
-              <button type="button" className="cm-btn cm-btn-ghost" onClick={() => setShowAdd(false)}>Cancel</button>
+              <button type="submit" className="cm-btn cm-btn-primary">{editing ? 'Update Subject' : 'Create Subject'}</button>
+              <button type="button" className="cm-btn cm-btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
             </div>
           </form>
         </Modal>
@@ -252,9 +272,8 @@ function SubjectsTab() {
 // TAB: ACADEMIC YEARS
 // ============================================================================
 function AcademicYearsTab() {
-  const [years, setYears] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [toast, setToast] = useState(null);
@@ -264,10 +283,15 @@ function AcademicYearsTab() {
   const load = useCallback(async () => { if (years.length === 0) setLoading(true); const res = await api('/academic-years'); if (res.ok) setYears((await res.json()).data); setLoading(false); }, [years.length]);
   useEffect(() => { load(); }, [load]);
 
-  const handleAdd = async (e) => {
+  const openAdd = () => { setEditing(null); setForm({ start_year: '', end_year: '' }); setShowModal(true); };
+  const openEdit = (y) => { setEditing(y); setForm({ start_year: y.start_year, end_year: y.end_year }); setShowModal(true); };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await api('/academic-years', { method: 'POST', body: JSON.stringify(form) });
-    if (res.ok) { setShowAdd(false); setForm({ start_year: '', end_year: '' }); load(); showToast('Academic year added!'); }
+    const method = editing ? 'PUT' : 'POST';
+    const path = editing ? `/academic-years/${editing.id}` : '/academic-years';
+    const res = await api(path, { method, body: JSON.stringify(form) });
+    if (res.ok) { setShowModal(false); setForm({ start_year: '', end_year: '' }); load(); showToast(editing ? 'Updated!' : 'Added!'); }
     else { const d = await res.json(); showToast(d.error || 'Failed', 'error'); }
   };
 
@@ -295,23 +319,28 @@ function AcademicYearsTab() {
                     <td>{y.start_year}</td>
                     <td>{y.end_year}</td>
                     <td><span className="cm-code-badge">{y.start_year}–{y.end_year}</span></td>
-                    <td><button className="cm-icon-btn cm-icon-btn--danger" onClick={() => setConfirmDelete({ ...y, name: `${y.start_year}–${y.end_year}` })}>🗑</button></td>
+                    <td>
+                      <div className="cm-actions">
+                        <button className="cm-icon-btn cm-icon-btn--primary" onClick={() => openEdit(y)} title="Edit">✏️</button>
+                        <button className="cm-icon-btn cm-icon-btn--danger" onClick={() => setConfirmDelete({ ...y, name: `${y.start_year}–${y.end_year}` })}>🗑</button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
             </tbody>
           </table>
         </div>
       )}
-      {showAdd && (
-        <Modal title="Add Academic Year" onClose={() => setShowAdd(false)}>
-          <form className="cm-form" onSubmit={handleAdd}>
+      {showModal && (
+        <Modal title={editing ? "Edit Academic Year" : "Add Academic Year"} onClose={() => setShowModal(false)}>
+          <form className="cm-form" onSubmit={handleSubmit}>
             <div className="cm-form-row">
               <div className="cm-field"><label>Start Year *</label><input required type="number" placeholder="2024" value={form.start_year} onChange={e => setForm(p => ({ ...p, start_year: e.target.value }))} /></div>
               <div className="cm-field"><label>End Year *</label><input required type="number" placeholder="2025" value={form.end_year} onChange={e => setForm(p => ({ ...p, end_year: e.target.value }))} /></div>
             </div>
             <div className="cm-modal-actions">
-              <button type="submit" className="cm-btn cm-btn-primary">Add Year</button>
-              <button type="button" className="cm-btn cm-btn-ghost" onClick={() => setShowAdd(false)}>Cancel</button>
+              <button type="submit" className="cm-btn cm-btn-primary">{editing ? 'Update' : 'Add Year'}</button>
+              <button type="button" className="cm-btn cm-btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
             </div>
           </form>
         </Modal>
@@ -331,7 +360,8 @@ function OfferingsTab() {
   const [years, setYears] = useState([]);
   const [faculty, setFaculty] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [toast, setToast] = useState(null);
@@ -356,10 +386,15 @@ function OfferingsTab() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleAdd = async (e) => {
+  const openAdd = () => { setEditing(null); setForm({ subject_id: '', academic_year_id: '', faculty_id: '' }); setShowModal(true); };
+  const openEdit = (o) => { setEditing(o); setForm({ subject_id: o.subject_id, academic_year_id: o.academic_year_id, faculty_id: o.faculty_id || '' }); setShowModal(true); };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await api('/subject-offerings', { method: 'POST', body: JSON.stringify(form) });
-    if (res.ok) { setShowAdd(false); setForm({ subject_id: '', academic_year_id: '', faculty_id: '' }); load(); showToast('Offering created!'); }
+    const method = editing ? 'PUT' : 'POST';
+    const path = editing ? `/subject-offerings/${editing.id}` : '/subject-offerings';
+    const res = await api(path, { method, body: JSON.stringify(form) });
+    if (res.ok) { setShowModal(false); setForm({ subject_id: '', academic_year_id: '', faculty_id: '' }); load(); showToast(editing ? 'Updated!' : 'Offering created!'); }
     else { const d = await res.json(); showToast(d.error || 'Failed', 'error'); }
   };
 
@@ -388,16 +423,21 @@ function OfferingsTab() {
                     <td>{o.start_year}–{o.end_year}</td>
                     <td>{o.faculty_name || <span className="cm-muted">Unassigned</span>}</td>
                     <td><span className="cm-count-small">{o.unit_count}</span></td>
-                    <td><button className="cm-icon-btn cm-icon-btn--danger" onClick={() => setConfirmDelete({ ...o, name: `${o.subject_code} ${o.start_year}–${o.end_year}` })}>🗑</button></td>
+                    <td>
+                      <div className="cm-actions">
+                        <button className="cm-icon-btn cm-icon-btn--primary" onClick={() => openEdit(o)} title="Edit">✏️</button>
+                        <button className="cm-icon-btn cm-icon-btn--danger" onClick={() => setConfirmDelete({ ...o, name: `${o.subject_code} ${o.start_year}–${o.end_year}` })}>🗑</button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
             </tbody>
           </table>
         </div>
       )}
-      {showAdd && (
-        <Modal title="Add Subject Offering" onClose={() => setShowAdd(false)}>
-          <form className="cm-form" onSubmit={handleAdd}>
+      {showModal && (
+        <Modal title={editing ? "Edit Offering" : "Add Subject Offering"} onClose={() => setShowModal(false)}>
+          <form className="cm-form" onSubmit={handleSubmit}>
             <div className="cm-field">
               <label>Subject *</label>
               <select required value={form.subject_id} onChange={e => setForm(p => ({ ...p, subject_id: e.target.value }))}>
@@ -420,8 +460,8 @@ function OfferingsTab() {
               </select>
             </div>
             <div className="cm-modal-actions">
-              <button type="submit" className="cm-btn cm-btn-primary">Create Offering</button>
-              <button type="button" className="cm-btn cm-btn-ghost" onClick={() => setShowAdd(false)}>Cancel</button>
+              <button type="submit" className="cm-btn cm-btn-primary">{editing ? 'Update Offering' : 'Create Offering'}</button>
+              <button type="button" className="cm-btn cm-btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
             </div>
           </form>
         </Modal>
@@ -440,7 +480,8 @@ function UnitsTab() {
   const [offerings, setOfferings] = useState([]);
   const [filterOffering, setFilterOffering] = useState('');
   const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [toast, setToast] = useState(null);
@@ -461,10 +502,15 @@ function UnitsTab() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleAdd = async (e) => {
+  const openAdd = () => { setEditing(null); setForm({ subject_offering_id: '', unit_number: '' }); setShowModal(true); };
+  const openEdit = (u) => { setEditing(u); setForm({ subject_offering_id: u.subject_offering_id, unit_number: u.unit_number }); setShowModal(true); };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await api('/units', { method: 'POST', body: JSON.stringify(form) });
-    if (res.ok) { setShowAdd(false); setForm({ subject_offering_id: '', unit_number: '' }); load(); showToast('Unit added!'); }
+    const method = editing ? 'PUT' : 'POST';
+    const path = editing ? `/units/${editing.id}` : '/units';
+    const res = await api(path, { method, body: JSON.stringify(form) });
+    if (res.ok) { setShowModal(false); setForm({ subject_offering_id: '', unit_number: '' }); load(); showToast(editing ? 'Updated!' : 'Unit added!'); }
     else { const d = await res.json(); showToast(d.error || 'Failed', 'error'); }
   };
 
@@ -498,16 +544,21 @@ function UnitsTab() {
                     <td><span className="cm-code-badge">Unit {u.unit_number}</span></td>
                     <td>{u.subject_code} — {u.subject_name}</td>
                     <td>{u.start_year}–{u.end_year}</td>
-                    <td><button className="cm-icon-btn cm-icon-btn--danger" onClick={() => setConfirmDelete(u)}>🗑</button></td>
+                    <td>
+                      <div className="cm-actions">
+                        <button className="cm-icon-btn cm-icon-btn--primary" onClick={() => openEdit(u)} title="Edit">✏️</button>
+                        <button className="cm-icon-btn cm-icon-btn--danger" onClick={() => setConfirmDelete(u)}>🗑</button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
             </tbody>
           </table>
         </div>
       )}
-      {showAdd && (
-        <Modal title="Add Unit" onClose={() => setShowAdd(false)}>
-          <form className="cm-form" onSubmit={handleAdd}>
+      {showModal && (
+        <Modal title={editing ? "Edit Unit" : "Add Unit"} onClose={() => setShowModal(false)}>
+          <form className="cm-form" onSubmit={handleSubmit}>
             <div className="cm-field">
               <label>Subject Offering *</label>
               <select required value={form.subject_offering_id} onChange={e => setForm(p => ({ ...p, subject_offering_id: e.target.value }))}>
@@ -517,8 +568,8 @@ function UnitsTab() {
             </div>
             <div className="cm-field"><label>Unit Number *</label><input required type="number" min="1" max="10" placeholder="e.g. 1" value={form.unit_number} onChange={e => setForm(p => ({ ...p, unit_number: e.target.value }))} /></div>
             <div className="cm-modal-actions">
-              <button type="submit" className="cm-btn cm-btn-primary">Add Unit</button>
-              <button type="button" className="cm-btn cm-btn-ghost" onClick={() => setShowAdd(false)}>Cancel</button>
+              <button type="submit" className="cm-btn cm-btn-primary">{editing ? 'Update Unit' : 'Add Unit'}</button>
+              <button type="button" className="cm-btn cm-btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
             </div>
           </form>
         </Modal>

@@ -141,6 +141,9 @@
   transition: all 0.18s ease;
 }
 .cm-icon-btn--danger:hover { background: rgba(220,38,38,0.12); border-color: #dc2626; }
+.cm-icon-btn--primary:hover { background: rgba(212,175,55,0.12); border-color: var(--accent); }
+
+.cm-actions { display: flex; gap: 0.5rem; }
 
 /* ── Buttons ── */
 .cm-btn {

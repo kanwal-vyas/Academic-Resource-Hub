@@ -101,6 +101,25 @@ router.post('/courses', authMiddleware, adminOnly, async (req, res) => {
   }
 });
 
+router.put('/courses/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { id } = req.params;
+  const { code, name, degree_type, department } = req.body;
+  if (!code || !name) return res.status(400).json({ error: 'code and name are required' });
+  try {
+    const result = await pool.query(
+      `UPDATE courses SET code = $1, name = $2, degree_type = $3, department = $4
+       WHERE id = $5 RETURNING *`,
+      [code.toUpperCase(), name, degree_type || null, department || null, id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Course not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ success: false, error: 'Course code already exists' });
+    console.error('Error updating course:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 router.delete('/courses/:id', authMiddleware, adminOnly, async (req, res) => {
   const { id } = req.params;
   try {
@@ -152,6 +171,25 @@ router.post('/subjects', authMiddleware, adminOnly, async (req, res) => {
   }
 });
 
+router.put('/subjects/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { id } = req.params;
+  const { code, name, course_id } = req.body;
+  if (!code || !name || !course_id) return res.status(400).json({ error: 'code, name, and course_id are required' });
+  try {
+    const result = await pool.query(
+      `UPDATE subjects SET code = $1, name = $2, course_id = $3
+       WHERE id = $4 RETURNING *`,
+      [code.toUpperCase(), name, course_id, id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Subject not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ success: false, error: 'Subject code already exists' });
+    console.error('Error updating subject:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 router.delete('/subjects/:id', authMiddleware, adminOnly, async (req, res) => {
   const { id } = req.params;
   try {
@@ -189,6 +227,25 @@ router.post('/academic-years', authMiddleware, adminOnly, async (req, res) => {
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ success: false, error: 'Academic year already exists' });
     console.error('Error creating academic year:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.put('/academic-years/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { id } = req.params;
+  const { start_year, end_year } = req.body;
+  if (!start_year || !end_year) return res.status(400).json({ error: 'start_year and end_year are required' });
+  try {
+    const result = await pool.query(
+      `UPDATE academic_years SET start_year = $1, end_year = $2
+       WHERE id = $3 RETURNING *`,
+      [parseInt(start_year), parseInt(end_year), id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ success: false, error: 'Academic year already exists' });
+    console.error('Error updating academic year:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -248,6 +305,25 @@ router.post('/subject-offerings', authMiddleware, adminOnly, async (req, res) =>
   }
 });
 
+router.put('/subject-offerings/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { id } = req.params;
+  const { subject_id, academic_year_id, faculty_id } = req.body;
+  if (!subject_id || !academic_year_id) return res.status(400).json({ error: 'subject_id and academic_year_id are required' });
+  try {
+    const result = await pool.query(
+      `UPDATE subject_offerings SET subject_id = $1, academic_year_id = $2, faculty_id = $3
+       WHERE id = $4 RETURNING *`,
+      [subject_id, academic_year_id, faculty_id || null, id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ success: false, error: 'This subject offering already exists for that year' });
+    console.error('Error updating offering:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 router.delete('/subject-offerings/:id', authMiddleware, adminOnly, async (req, res) => {
   const { id } = req.params;
   try {
@@ -299,6 +375,25 @@ router.post('/units', authMiddleware, adminOnly, async (req, res) => {
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ success: false, error: 'This unit number already exists for this offering' });
     console.error('Error creating unit:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.put('/units/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { id } = req.params;
+  const { subject_offering_id, unit_number } = req.body;
+  if (!subject_offering_id || !unit_number) return res.status(400).json({ error: 'subject_offering_id and unit_number are required' });
+  try {
+    const result = await pool.query(
+      `UPDATE units SET subject_offering_id = $1, unit_number = $2
+       WHERE id = $3 RETURNING *`,
+      [subject_offering_id, parseInt(unit_number), id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ success: false, error: 'This unit number already exists for this offering' });
+    console.error('Error updating unit:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
